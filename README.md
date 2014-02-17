@@ -1,4 +1,4 @@
 Kaput
 =====
 
-Proactive issue notification.
+Intelligent issue awareness.
