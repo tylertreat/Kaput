@@ -91,7 +91,8 @@ class TestHandleException(unittest.TestCase):
         mock_http.request.assert_called_once_with(
             'https://kaput-dev.appspot.com/api/v1/exception',
             method='POST',
-            headers={'kaput-api-key': self.api_key},
+            headers={'kaput-api-key': self.api_key,
+                     'Content-Type': 'application/json'},
             body=json.dumps({
                 'api_key': self.api_key,
                 'timestamp': str(now),

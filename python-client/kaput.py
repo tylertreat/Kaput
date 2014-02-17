@@ -59,7 +59,8 @@ def _handle_exception(exc_type, exc_value, exc_traceback):
     # TODO: Handle retries.
     _HTTP.request('%s%s' % (_SERVICE_HOST, _SERVICE_ENDPOINT),
                   method='POST',
-                  headers={'kaput-api-key': _API_KEY},
+                  headers={'kaput-api-key': _API_KEY,
+                           'Content-Type': 'application/json'},
                   body=json.dumps(payload))
 
     if _DEBUG:
