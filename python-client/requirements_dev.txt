@@ -1,0 +1,6 @@
+nose
+rednose
+mock
+coverage
+nose-exclude
+NoseGunit
