@@ -11,6 +11,9 @@ if os.environ.get('SERVER_SOFTWARE', '').startswith('Dev'):
 # Flask-Cache settings
 CACHE_TYPE = 'gaememcached'
 
+GITHUB_OAUTH_CLIENT_ID = 'changeme'
+GITHUB_OAUTH_CLIENT_SECRET = 'changeme'
+
 
 try:
     import settingslocal
