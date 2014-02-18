@@ -13,3 +13,12 @@ def process_exception():
 
     return data, 200
 
+
+@blueprint.route('/v1/push', methods=['POST'])
+def process_git_push():
+    # TODO: Implement
+    data = request.data
+    logging.debug('data: %s' % data)
+
+    return data, 200
+
