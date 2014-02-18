@@ -1,5 +1,7 @@
 import os
 
+from google.appengine.api import app_identity
+
 
 DEBUG = False
 
@@ -11,8 +13,10 @@ if os.environ.get('SERVER_SOFTWARE', '').startswith('Dev'):
 # Flask-Cache settings
 CACHE_TYPE = 'gaememcached'
 
-GITHUB_OAUTH_CLIENT_ID = 'changeme'
-GITHUB_OAUTH_CLIENT_SECRET = 'changeme'
+GITHUB_CLIENT_ID = 'changeme'
+GITHUB_CLIENT_SECRET = 'changeme'
+GITHUB_CALLBACK_URL = \
+    'https://%s/authorized' % app_identity.get_default_version_hostname()
 
 
 try:
