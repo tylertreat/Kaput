@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if g.user %}
+    Hello! <a href="/user">Get user</a> |
+    <a href="/logout">Logout</a>
+{% else %}
+    'Hello! <a href="/login">Login</a>
+{% endif %}
+
+{% endblock content %}
