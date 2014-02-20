@@ -1,5 +1,7 @@
 import os
 
+from flask.ext.login import LoginManager
+
 from google.appengine.api import app_identity
 
 
@@ -9,6 +11,7 @@ DEBUG = False
 if os.environ.get('SERVER_SOFTWARE', '').startswith('Dev'):
     DEBUG = True
 
+login_manager = LoginManager()
 
 # Flask-Cache settings
 CACHE_TYPE = 'gaememcached'

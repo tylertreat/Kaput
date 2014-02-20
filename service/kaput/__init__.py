@@ -4,15 +4,10 @@ import furious_router
 furious_router.setup_lib_path()
 
 import flask
-from flask.ext.github import GitHub
 
 from kaput import settings
 from kaput.api.blueprint import blueprint as api_blueprint
 from kaput.view.blueprint import blueprint as views_blueprint
-
-
-global github
-github = None
 
 
 def create_app(config='kaput.settings'):
@@ -21,8 +16,7 @@ def create_app(config='kaput.settings'):
     app.config.from_object(config)
     app.secret_key = settings.SESSION_SECRET
 
-    global github
-    github = GitHub(app)
+    settings.login_manager.init_app(app)
 
     # Imported to register urls
     from kaput.api import controller as api_controller

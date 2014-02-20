@@ -1,58 +1,42 @@
 from flask import flash
-from flask import g
 from flask import redirect
 from flask import render_template
 from flask import request
-from flask import session
+from flask.ext.login import current_user
+from flask.ext.login import login_required
+from flask.ext.login import login_user
+from flask.ext.login import logout_user
 
-from kaput import github
+from kaput.services import gh
 from kaput.user import User
 from kaput.view.blueprint import blueprint
 
 
-@blueprint.before_request
-def before_request():
-    g.user = None
-    if 'user_id' in session:
-        g.user = User.get_by_id(session['user_id'])
-
-
 @blueprint.route('/')
 def index():
-    user = g.user
-
-    return render_template('index.html', user=user)
-
-
-@github.access_token_getter
-def token_getter():
-    user = g.user
-    if user:
-        return user.github_access_token
+    return render_template('index.html', user=current_user)
 
 
 @blueprint.route('/login')
 def login():
-    if session.get('user_id', None) is None:
-        return github.authorize(scope='repo,user:email')
-    else:
-        return 'Already logged in'
+    if current_user.is_authenticated():
+        return redirect('/')
+
+    return gh.authorize()
 
 
 @blueprint.route('/logout')
+@login_required
 def logout():
-    session.pop('user_id', None)
+    logout_user()
     return redirect('/')
 
 
-@blueprint.route('/user')
-def user():
-    return str(github.get('user'))
-
-
 @blueprint.route('/authorized')
-@github.authorized_handler
-def authorized(access_token):
+def authorized():
+    session_code = request.args.get('code')
+    access_token = gh.exchange_for_token(session_code)
+
     next_url = request.args.get('next') or '/'
 
     if not access_token:
@@ -62,11 +46,12 @@ def authorized(access_token):
     user = User.query().filter(User.github_access_token == access_token).get()
 
     if not user:
-        user = User(github_access_token=access_token)
+        gh_user = gh.client().get_user()
+        user = User(id='github_%s' % gh_user.id, username=gh_user.login,
+                    email=gh_user.email, github_access_token=access_token)
+        user.put()
 
-    user.put()
-
-    session['user_id'] = user.key.id()
+    login_user(user)
 
     return redirect('/')
 

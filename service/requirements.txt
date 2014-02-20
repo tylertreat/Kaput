@@ -6,8 +6,9 @@ Werkzeug
 httplib2
 Flask
 Flask-Cache
+Flask-Login
 httpagentparser
 webob
 itsdangerous
 git+git://github.com/tylertreat/furious.git#egg=furious
-git+git://github.com/tylertreat/github-flask.git#egg=flask_github
+PyGithub
