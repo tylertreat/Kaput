@@ -53,7 +53,10 @@ def exchange_for_token(session_code):
     return content.get('access_token')
 
 
-def client():
+def client(token=None):
+    if token:
+        return GitHub(token)
+
     assert current_user.is_authenticated()
 
     return GitHub(current_user.github_access_token)

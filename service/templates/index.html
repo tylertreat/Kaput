@@ -4,6 +4,11 @@
 
 {% if user.is_authenticated() %}
     Hello, {{ user.username }}  | <a href="/logout">Logout</a>
+    <ul>
+        {% for repo in user.get_github_repos() %}
+            <li><a href="/repo/{{ repo.name }}">{{ repo.name }}</a></li>
+        {% endfor %}
+    </ul>
 {% else %}
     Hello! <a href="/login">Login</a>
 {% endif %}

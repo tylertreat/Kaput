@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ repo.name }}</h2>
+<p>Enabled: {{ repo.enabled }}</p>
+{% if not repo.enabled %}
+    <a href="/repo/{{ repo.name }}/enable?on=true">Enable</a>
+{% else %}
+    <a href="/repo/{{ repo.name }}/enable?on=false">Disable</a>
+{% endif %}
+
+
+{% endblock content %}

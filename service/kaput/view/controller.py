@@ -8,6 +8,7 @@ from flask.ext.login import login_user
 from flask.ext.login import logout_user
 
 from kaput.services import gh
+from kaput.repository import Repository
 from kaput.user import User
 from kaput.view.blueprint import blueprint
 
@@ -15,6 +16,45 @@ from kaput.view.blueprint import blueprint
 @blueprint.route('/')
 def index():
     return render_template('index.html', user=current_user)
+
+
+@login_required
+@blueprint.route('/repo/<name>')
+def repo(name):
+    gh_repo = current_user.get_github_repo(name)
+
+    if not gh_repo:
+        return 'No repo %s' % name, 404
+
+    repo = Repository.get_by_id('github_%s' % gh_repo.id)
+
+    if not repo:
+        repo = Repository(id='github_%s' % gh_repo.id, name=name,
+                          owner=current_user.key)
+        repo.put()
+
+    return render_template('repo.html', repo=repo)
+
+
+@login_required
+@blueprint.route('/repo/<name>/enable')
+def enable_repo(name):
+    enable = request.args['on'] == 'true'
+    gh_repo = current_user.get_github_repo(name)
+
+    if not gh_repo:
+        return 'No repo %s' % name, 404
+
+    repo = Repository.get_by_id('github_%s' % gh_repo.id)
+
+    if not repo:
+        repo = Repository(id='github_%s' % gh_repo.id, name=name,
+                          owner=current_user.key)
+
+    repo.enabled = enable
+    repo.put()
+
+    return redirect('/repo/%s' % name)
 
 
 @blueprint.route('/login')
