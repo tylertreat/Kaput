@@ -1,0 +1,4 @@
+queue:
+- name: commit-aggregation
+  rate: 500/s
+  bucket_size: 100
