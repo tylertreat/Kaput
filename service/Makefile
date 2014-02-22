@@ -4,6 +4,7 @@ PIP := pip
 
 BUILD_DIR := .build
 TOOLS_DIR := .tools
+JAVASCRIPT_DIR := ./static/js
 
 clean:
 		find . -name "*.py[co]" -delete
@@ -17,7 +18,7 @@ run: deps
 
 test: clean integrations
 
-deps: py_dev_deps py_deploy_deps
+deps: py_dev_deps py_deploy_deps js
 
 py_deploy_deps: $(BUILD_DIR)/pip-deploy.log
 
@@ -40,3 +41,5 @@ integrations:
 
 test: clean integrations
 
+js:
+		node $(JAVASCRIPT_DIR)/lib/r.js -o $(JAVASCRIPT_DIR)/buildconfig.js
