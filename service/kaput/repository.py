@@ -1,3 +1,4 @@
+import logging
 import re
 
 from google.appengine.ext import ndb
@@ -42,8 +43,12 @@ class CommitChunk(ndb.Model):
 
 def process_repo_push(repo, owner, push_data):
 
+    logging.debug('Processing push to repo %s' % repo.key.id())
+
     with context.new() as ctx:
         for commit in push_data['commits']:
+            logging.debug('Inserting task for commit %s' % commit['id'])
+
             ctx.add(
                 target=process_commit,
                 args=(repo.key.id(), commit['id'], owner.github_access_token))
@@ -68,7 +73,9 @@ def process_commit(repo_id, commit_id, owner_token):
     chunks = []
 
     for commit_file in commit.files:
-        chunks.extend(_parse_chunks(commit_file))
+        chunks.extend(_parse_chunks(commit, commit_file))
+
+    logging.debug('Saving commit %s with %s chunks' % (commit_id, len(chunks)))
 
     ndb.put_multi([commit] + chunks)
 
