@@ -38,7 +38,6 @@ def process_git_push():
         logging.error('Owner not found for repo github_%s' % repo_id)
         return 'Owner not found for repo github_%s' % repo_id
 
-    logging.debug('Processing github_%s' % repo_id)
     process_repo_push(repo, owner, push_data)
 
     return 'Processing github_%s' % repo_id, 200
