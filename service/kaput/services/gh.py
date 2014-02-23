@@ -72,3 +72,6 @@ class GitHub(object):
     def get_user(self):
         return self.github.get_user()
 
+    def get_repo(self, name):
+        return self.github.get_repo(name)
+
