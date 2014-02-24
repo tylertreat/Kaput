@@ -42,13 +42,12 @@ class Commit(ndb.Model):
     message = ndb.TextProperty(indexed=False, required=False)
 
 
-class CommitChunk(ndb.Model):
+class CommitHunk(ndb.Model):
     """Granular source code diff hunk in a commit."""
 
     commit = ndb.KeyProperty(kind=Commit)
     filename = ndb.StringProperty()
-    start_line = ndb.IntegerProperty()
-    line_count = ndb.IntegerProperty(default=0)
+    lines = ndb.IntegerProperty(repeated=True)
     timestamp = ndb.DateTimeProperty()
 
 
@@ -107,40 +106,40 @@ def process_commit(repo_id, commit_id, owner_token):
     logging.debug('Saving commit %s' % commit_id)
     commit.put()
 
-    chunks = []
+    hunks = []
 
     for commit_file in gh_commit.files:
-        chunks.extend(_parse_chunks(commit, commit_file))
+        hunks.extend(_parse_hunks(commit, commit_file))
 
-    logging.debug('Saving %d commit chunks' % len(chunks))
-    ndb.put_multi(chunks)
+    logging.debug('Saving %d commit hunks' % len(hunks))
+    ndb.put_multi(hunks)
 
 
-def _parse_chunks(commit, commit_file):
-    """Parse CommitChunks from the commit patch on the committed file.
+def _parse_hunks(commit, commit_file):
+    """Parse CommitHunks from the commit patch on the committed file.
 
     Args:
         commit: Commit instance the file pertains to.
         commit_file: File instance for the committed file.
 
     Returns:
-        list of CommitChunks.
+        list of CommitHunks.
     """
 
     patch = commit_file.patch
 
-    chunks = []
+    hunks = []
 
     for patch in re.findall('@@(.*)@@', patch, re.IGNORECASE):
         _, after = patch.strip().split(' ')
 
         start_line, line_count = after.split(',')
+        lines = range(int(start_line), int(start_line) + int(line_count))
 
-        chunks.append(CommitChunk(parent=commit.key, commit=commit.key,
-                                  filename=commit_file.filename,
-                                  start_line=int(start_line),
-                                  line_count=int(line_count),
-                                  timestamp=commit.author_date))
+        hunks.append(CommitHunk(parent=commit.key, commit=commit.key,
+                                filename=commit_file.filename,
+                                lines=lines,
+                                timestamp=commit.author_date))
 
-    return chunks
+    return hunks
 
