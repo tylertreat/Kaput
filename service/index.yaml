@@ -1,0 +1,10 @@
+indexes:
+
+- kind: CommitHunk
+  ancestor: yes
+  properties:
+  - name: filename
+  - name: lines
+  - name: timestamp
+    direction: desc
+
