@@ -14,13 +14,20 @@ COMMIT_QUEUE = 'commit-aggregation'
 
 
 class Repository(ndb.Model):
+    """Git repository."""
 
+    # The name of the repo.
     name = ndb.StringProperty()
+
+    # The User this repo belongs to.
     owner = ndb.KeyProperty(kind=User)
+
+    # Process webhooks for this repo?
     enabled = ndb.BooleanProperty(default=False)
 
 
 class Commit(ndb.Model):
+    """Commit to a Git repository."""
 
     repo = ndb.KeyProperty(kind=Repository)
     sha = ndb.StringProperty(indexed=False)
@@ -36,6 +43,7 @@ class Commit(ndb.Model):
 
 
 class CommitChunk(ndb.Model):
+    """Granular source code diff hunk in a commit."""
 
     commit = ndb.KeyProperty(kind=Commit)
     filename = ndb.StringProperty()
@@ -45,10 +53,18 @@ class CommitChunk(ndb.Model):
 
 
 def process_repo_push(repo, owner, push_data):
+    """Process a push to a repo by collecting data for each commit
+
+    Args:
+        repo: Repository instance of the repo that was pushed to.
+        owner: User instance of the owner of the repo pushed to.
+        push_data: dict containing data for the push.
+    """
 
     logging.debug('Processing push to repo %s' % repo.key.id())
 
     with context.new() as ctx:
+        # Fan out tasks for each commit in the push.
         for commit in push_data['commits']:
             logging.debug('Inserting task for commit %s' % commit['id'])
 
@@ -59,6 +75,15 @@ def process_repo_push(repo, owner, push_data):
 
 @defaults(queue=COMMIT_QUEUE)
 def process_commit(repo_id, commit_id, owner_token):
+    """Process a single commit that was made to a repo by collecting data for
+    it.
+
+    Args:
+        repo_id: the id for the repo the commit was for.
+        commit_id: the SHA hash of the commit.
+        owner_token: OAuth access token for the owner of the repo.
+    """
+
     # TODO: error handling/retries
     repo = Repository.get_by_id(repo_id)
     github = gh.client(owner_token)
@@ -92,6 +117,16 @@ def process_commit(repo_id, commit_id, owner_token):
 
 
 def _parse_chunks(commit, commit_file):
+    """Parse CommitChunks from the commit patch on the committed file.
+
+    Args:
+        commit: Commit instance the file pertains to.
+        commit_file: File instance for the committed file.
+
+    Returns:
+        list of CommitChunks.
+    """
+
     patch = commit_file.patch
 
     chunks = []
