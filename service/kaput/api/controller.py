@@ -4,21 +4,25 @@ import logging
 from flask import request
 
 from kaput.api.blueprint import blueprint
+from kaput.report import process_exception
 from kaput.repository import process_repo_push
 from kaput.repository import Repository
 
 
 @blueprint.route('/v1/exception', methods=['POST'])
-def process_exception():
-    # TODO: Implement
+def handle_exception():
+    # TODO: Client secret authentication.
     data = request.data
     logging.debug('data: %s' % data)
 
-    return data, 200
+    process_exception(data)
+
+    return 'Processing exception', 200
 
 
 @blueprint.route('/v1/push', methods=['POST'])
 def process_git_push():
+    # TODO: Verify request origin.
     push_data = json.loads(request.data)
 
     repo_id = push_data['repository']['id']
