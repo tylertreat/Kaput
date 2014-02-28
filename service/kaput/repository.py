@@ -71,6 +71,8 @@ def process_repo_push(repo, owner, push_data):
                 target=process_commit,
                 args=(repo.key.id(), commit['id'], owner.github_access_token))
 
+    logging.debug('Inserted %d fan-out tasks' % ctx.insert_success)
+
 
 @defaults(queue=COMMIT_QUEUE)
 def process_commit(repo_id, commit_id, owner_token):
@@ -85,10 +87,7 @@ def process_commit(repo_id, commit_id, owner_token):
 
     # TODO: error handling/retries
     repo = Repository.get_by_id(repo_id)
-    github = gh.client(owner_token)
-    user = github.get_user()
-
-    gh_commit = user.get_repo(repo.name).get_commit(commit_id)
+    gh_commit = _get_commit(repo.name, commit_id, owner_token)
     author = gh_commit.commit.author
     committer = gh_commit.commit.committer
 
@@ -113,6 +112,12 @@ def process_commit(repo_id, commit_id, owner_token):
 
     logging.debug('Saving %d commit hunks' % len(hunks))
     ndb.put_multi(hunks)
+
+
+def _get_commit(repo_name, commit_id, owner_token):
+    github = gh.client(owner_token)
+    user = github.get_user()
+    return user.get_repo(repo_name).get_commit(commit_id)
 
 
 def _parse_hunks(commit, commit_file):
