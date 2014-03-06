@@ -22,31 +22,42 @@ class TestInit(unittest.TestCase):
         key.
         """
 
-        self.assertRaises(Exception, kaput.init, None)
+        self.assertRaises(Exception, kaput.init, None, '123')
 
-    def test_set_debug_and_api_key(self):
-        """Ensure _DEBUG and _API_KEY are correctly set and the excepthook is
-        patched.
+    def test_no_project_id(self):
+        """Ensure that an exception is raised when None is passed in as a
+        project id.
+        """
+
+        self.assertRaises(Exception, kaput.init, 'abc', None)
+
+    def test_set_properties(self):
+        """Ensure _DEBUG, _API_KEY, and _PROJECT_ID are correctly set and the
+        excepthook is patched.
         """
 
         api_key = 'abc'
+        project_id = '123'
 
-        kaput.init(api_key, debug=True)
+        kaput.init(api_key, project_id, debug=True)
 
         self.assertEqual(api_key, kaput._API_KEY)
+        self.assertEqual(project_id, kaput._PROJECT_ID)
         self.assertTrue(kaput._DEBUG)
         self.assertEqual(kaput._handle_exception, sys.excepthook)
 
     def test_set_api_key(self):
-        """Ensure _DEBUG and _API_KEY are correctly set and the excepthook is
-        patched when the debug kwarg is not specified.
+        """Ensure _DEBUG, _API_KEY, and _PROJECT_ID are correctly set and the
+        excepthook is patched when the debug kwarg is not specified.
         """
 
         api_key = 'abc'
+        project_id = '123'
 
-        kaput.init(api_key)
+        kaput.init(api_key, project_id)
 
         self.assertEqual(api_key, kaput._API_KEY)
+        self.assertEqual(project_id, kaput._PROJECT_ID)
         self.assertFalse(kaput._DEBUG)
         self.assertEqual(kaput._handle_exception, sys.excepthook)
 
@@ -59,10 +70,13 @@ class TestHandleException(unittest.TestCase):
 
     def setUp(self):
         self.api_key = 'abc'
+        self.project_id = '123'
         kaput._API_KEY = self.api_key
+        kaput._PROJECT_ID = self.project_id
 
     def tearDown(self):
         kaput._API_KEY = None
+        kaput._PROJECT_ID = None
 
     def test_handle_exception(self, mock_http, mock_tb, mock_datetime,
                               mock_excepthook):
@@ -94,7 +108,7 @@ class TestHandleException(unittest.TestCase):
             headers={'kaput-api-key': self.api_key,
                      'Content-Type': 'application/json'},
             body=json.dumps({
-                'api_key': self.api_key,
+                'project_id': self.project_id,
                 'timestamp': str(now),
                 'exception_type': exc_type.__name__,
                 'exception_message': message,

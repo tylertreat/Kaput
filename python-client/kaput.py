@@ -6,29 +6,31 @@ import sys
 import traceback
 
 
-global _API_KEY
 _API_KEY = None
-
-global _DEBUG
+_PROJECT_ID = None
 _DEBUG = False
 
-global _SERVICE_HOST
 _SERVICE_HOST = 'https://kaput-dev.appspot.com'
 _SERVICE_ENDPOINT = '/api/v1/exception'
 
 _HTTP = Http()
 
 
-def init(api_key, debug=False):
+def init(api_key, project_id, debug=False):
     """Initialize the Kaput service for error monitoring."""
 
     global _API_KEY
     _API_KEY = api_key
+    global _PROJECT_ID
+    _PROJECT_ID = project_id
     global _DEBUG
     _DEBUG = debug
 
     if not _API_KEY:
         raise Exception('Kaput API key required')
+
+    if not _PROJECT_ID:
+        raise Exception('Project ID required')
 
     # Use a hook to capture and report exceptions.
     # TODO: Support chaining user/third-party excepthooks. This overwrites them
@@ -47,7 +49,7 @@ def _handle_exception(exc_type, exc_value, exc_traceback):
     frames = traceback.extract_tb(exc_traceback)
 
     payload = {
-        'api_key': _API_KEY,
+        'project_id': _PROJECT_ID,
         'timestamp': str(datetime.utcnow()),
         'exception_type': exc_type.__name__,
         'exception_message': exc_value.message,
