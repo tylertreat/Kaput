@@ -1,6 +1,6 @@
-from datetime import datetime
 import json
 import sys
+import time
 import unittest
 
 from mock import Mock
@@ -63,7 +63,7 @@ class TestInit(unittest.TestCase):
 
 
 @patch('kaput.sys.__excepthook__')
-@patch('kaput.datetime')
+@patch('kaput.time')
 @patch('kaput.traceback')
 @patch('kaput._HTTP')
 class TestHandleException(unittest.TestCase):
@@ -78,7 +78,7 @@ class TestHandleException(unittest.TestCase):
         kaput._API_KEY = None
         kaput._PROJECT_ID = None
 
-    def test_handle_exception(self, mock_http, mock_tb, mock_datetime,
+    def test_handle_exception(self, mock_http, mock_tb, mock_time,
                               mock_excepthook):
         """Ensure _handle_exception makes a request to the correct endpoint
         with the correct payload.
@@ -95,8 +95,8 @@ class TestHandleException(unittest.TestCase):
             ('baz.py', 34, 'baz', 'return x + 1')
         ]
         mock_tb.format_tb.return_value = 'this is a traceback'
-        now = datetime.utcnow()
-        mock_datetime.utcnow.return_value = now
+        now = time.time()
+        mock_time.time.return_value = now
 
         kaput._handle_exception(exc_type, exception, mock_traceback)
 
@@ -109,9 +109,9 @@ class TestHandleException(unittest.TestCase):
                      'Content-Type': 'application/json'},
             body=json.dumps({
                 'project_id': self.project_id,
-                'timestamp': str(now),
-                'exception_type': exc_type.__name__,
-                'exception_message': message,
+                'timestamp': now,
+                'exception': exc_type.__name__,
+                'message': message,
                 'frames': mock_tb.extract_tb.return_value,
                 'stacktrace': mock_tb.format_tb.return_value
             })

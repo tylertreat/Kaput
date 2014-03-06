@@ -1,8 +1,8 @@
-from datetime import datetime
 from httplib2 import Http
 import json
 import logging
 import sys
+import time
 import traceback
 
 
@@ -50,9 +50,9 @@ def _handle_exception(exc_type, exc_value, exc_traceback):
 
     payload = {
         'project_id': _PROJECT_ID,
-        'timestamp': str(datetime.utcnow()),
-        'exception_type': exc_type.__name__,
-        'exception_message': exc_value.message,
+        'timestamp': time.time(),
+        'exception': exc_type.__name__,
+        'message': exc_value.message,
         'frames': frames,
         'stacktrace': traceback.format_tb(exc_traceback)
     }
