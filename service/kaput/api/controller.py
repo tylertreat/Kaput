@@ -13,9 +13,9 @@ from kaput.repository import Repository
 def handle_exception():
     # TODO: Client secret authentication.
     data = request.data
-    logging.debug('data: %s' % data)
+    logging.debug('Exception: %s' % data)
 
-    process_exception(data)
+    process_exception(json.loads(data))
 
     return 'Processing exception', 200
 
