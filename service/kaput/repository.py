@@ -138,7 +138,11 @@ def _parse_hunks(commit, commit_file):
     for patch in re.findall('@@(.*)@@', patch, re.IGNORECASE):
         _, after = patch.strip().split(' ')
 
-        start_line, line_count = after.split(',')
+        if ',' in after:
+            start_line, line_count = after.split(',')
+        else:
+            start_line, line_count = after, 1
+
         lines = range(int(start_line), int(start_line) + int(line_count))
 
         hunks.append(CommitHunk(parent=commit.key, commit=commit.key,
