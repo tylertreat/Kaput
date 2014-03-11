@@ -70,7 +70,10 @@ def notify(project_id, issue_id, timestamp, filename, line_no, func, text,
     if not repo or not repo.enabled:
         raise Abort('Repo %s is not enabled' % project_id)
 
+    logging.debug('Blame for repo %s %s:%s' % (project_id, filename, line_no))
     author_name, author_email, author = blame(repo, filename, line_no)
+
+    author_name = author_name or author_email
 
     if not author_email:
         raise Abort('Could not find contact for issue %s' % issue_id)
@@ -79,10 +82,10 @@ def notify(project_id, issue_id, timestamp, filename, line_no, func, text,
 
     sender = 'mail@kaput-dev.appspotmail.com'
     subject = 'Error Reported in %s [%s]' % (repo.name, timestamp)
-    body = ('Hi %s,\n\nAn error has occurred in %s. Our records indicate you '
-            'were the last person to touch the impacted code: \n\n%s:%s %s '
-            '%s\n\n%s') % (repo.name, filename, line_no, func, text,
-                           stacktrace)
+    body = ('Hi %s,\n\nAn error has occurred in %s. It looks like you may '
+            'have been the last person to touch the impacted code: '
+            '\n\n%s:%s %s %s\n\n%s') % (author_name, repo.name, filename,
+                                        line_no, func, text, stacktrace)
 
     mail.send_mail(sender, author_email, subject, body)
 
