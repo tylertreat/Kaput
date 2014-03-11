@@ -4,6 +4,8 @@ import unittest
 
 from furious.errors import Abort
 
+from gaeutils.test import DatastoreTestCase
+
 from mock import call
 from mock import Mock
 from mock import patch
@@ -81,4 +83,86 @@ class TestProcessException(unittest.TestCase):
                        frame2[0], frame2[1], frame2[2], frame2[3], stacktrace))
         ]
         self.assertEqual(expected, context.add.call_args_list)
+
+
+@patch('kaput.report.Repository.get_by_id')
+class TestNotify(DatastoreTestCase):
+
+    def setUp(self):
+        self.project_id = 'abc'
+        self.issue_id = '123'
+        self.timestamp = time.time()
+        self.filename = 'foo.py'
+        self.line_no = 42
+        self.func = 'foobar'
+        self.text = 'raise ValueError()'
+        self.stacktrace = 'stacktrace'
+
+        super(TestNotify, self).setUp()
+
+    def test_no_repo(self, mock_get_by_id):
+        """Ensure that if the repo doesn't exist, Abort is raised."""
+
+        mock_get_by_id.return_value = None
+
+        self.assertRaises(Abort, report.notify, self.project_id, self.issue_id,
+                          self.timestamp, self.filename, self.line_no,
+                          self.func, self.text, self.stacktrace)
+
+        mock_get_by_id.assert_called_once_with(self.project_id)
+
+    @patch('kaput.report.blame')
+    def test_no_contact(self, mock_blame, mock_get_by_id):
+        """Ensure that if no contact is found, Abort is raised."""
+
+        mock_blame.return_value = None, None, None
+
+        self.assertRaises(Abort, report.notify, self.project_id, self.issue_id,
+                          self.timestamp, self.filename, self.line_no,
+                          self.func, self.text, self.stacktrace)
+
+        mock_get_by_id.assert_called_once_with(self.project_id)
+        mock_blame.assert_called_once_with(
+            mock_get_by_id.return_value, self.filename, self.line_no)
+
+    @patch('kaput.report.Issue.get_by_id')
+    @patch('kaput.report.mail.send_mail')
+    @patch('kaput.report.blame')
+    def test_email_contact(self, mock_blame, mock_mail, mock_get_issue,
+                           mock_get_repo):
+        """Ensure that if a contact is found, an email alert is sent."""
+
+        author_name = 'Tyler'
+        author_email = 'ttreat31@gmail.com'
+
+        mock_blame.return_value = author_name, author_email, None
+        mock_repo = Mock()
+        mock_repo.name = 'repo'
+        mock_get_repo.return_value = mock_repo
+        mock_issue = Mock()
+        mock_issue.contacts = []
+        mock_get_issue.return_value = mock_issue
+
+        report.notify(self.project_id, self.issue_id, self.timestamp,
+                      self.filename, self.line_no, self.func, self.text,
+                      self.stacktrace)
+
+        mock_get_repo.assert_called_once_with(self.project_id)
+        mock_blame.assert_called_once_with(
+            mock_get_repo.return_value, self.filename, self.line_no)
+
+        mock_mail.assert_called_once_with(
+            'mail@kaput-dev.appspotmail.com', author_email,
+            'Error Reported in %s [%s]' %
+            (mock_repo.name, datetime.fromtimestamp(self.timestamp)),
+            ('Hi %s,\n\nAn error has occurred in %s. It looks like you may '
+             'have been the last person to touch the impacted code: '
+             '\n\n%s:%s %s %s\n\n%s') % (author_name, mock_repo.name,
+                                         self.filename, self.line_no,
+                                         self.func, self.text, self.stacktrace)
+        )
+
+        mock_get_issue.assert_called_once_with(self.issue_id)
+        mock_issue.put.assert_called_once_with()
+        self.assertEqual([author_email], mock_issue.contacts)
 
