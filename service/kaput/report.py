@@ -88,6 +88,7 @@ def notify(project_id, issue_id, timestamp, filename, line_no, func, text,
                                         line_no, func, text, stacktrace)
 
     mail.send_mail(sender, author_email, subject, body)
+    logging.debug('Email alert sent to %s' % author_email)
 
     @ndb.transactional
     def update_issue():
