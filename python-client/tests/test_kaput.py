@@ -94,14 +94,14 @@ class TestHandleException(unittest.TestCase):
             ('bar.py', 101, 'bar', 'return baz(x)'),
             ('baz.py', 34, 'baz', 'return x + 1')
         ]
-        mock_tb.format_tb.return_value = 'this is a traceback'
+        mock_tb.format_exc.return_value = 'this is a traceback'
         now = time.time()
         mock_time.time.return_value = now
 
         kaput._handle_exception(exc_type, exception, mock_traceback)
 
         mock_tb.extract_tb.assert_called_once_with(mock_traceback)
-        mock_tb.format_tb.assert_called_once_with(mock_traceback)
+        mock_tb.format_exc.assert_called_once_with()
         mock_http.request.assert_called_once_with(
             'https://kaput-dev.appspot.com/api/v1/exception',
             method='POST',
@@ -113,7 +113,7 @@ class TestHandleException(unittest.TestCase):
                 'exception': exc_type.__name__,
                 'message': message,
                 'frames': mock_tb.extract_tb.return_value,
-                'stacktrace': mock_tb.format_tb.return_value
+                'stacktrace': mock_tb.format_exc.return_value
             })
         )
         mock_excepthook.assert_called_once_with(
