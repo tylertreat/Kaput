@@ -1,0 +1,107 @@
+/* Globals */
+
+html, body {
+    height: 100%;
+    font-size: 15px;
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
+a {
+  color: #009FDA;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #00BAFF;
+}
+
+ul.list {
+  list-style-type: disc;
+}
+
+ul.list li {
+  list-style-position: outside;
+}
+
+.pull-left {
+  float: left !important;
+}
+.pull-right {
+  float: right !important;
+}
+
+/* Masthead */
+
+.masthead {
+  position: relative;
+  overflow: hidden;
+  background-image: -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    color-stop(0, #3F81A7),
+    color-stop(1, #1E506B)
+  );
+  background-image: -o-linear-gradient(bottom, #3F81A7 0%, #1E506B 100%);
+  background-image: -moz-linear-gradient(bottom, #3F81A7 0%, #1E506B 100%);
+  background-image: -webkit-linear-gradient(bottom, #3F81A7 0%, #1E506B 100%);
+  background-image: -ms-linear-gradient(bottom, #3F81A7 0%, #1E506B 100%);
+  background-image: linear-gradient(to bottom, #3F81A7 0%, #1E506B 100%); 
+  background-size: cover;
+  background-position: bottom; 
+  text-align: center;
+  padding: 50px 0px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.masthead em {
+    font-style: italic;
+}
+
+.masthead .labeled.button {
+  position: relative;
+  left: 0px;
+  top: 0px;
+  width: auto !important;
+  margin-right: 1em;
+}
+
+.masthead.segment h1 {
+  font-size: 4em;
+  color: #FFFFFF;
+  line-height: 1.2;
+  margin: -20px 0px 0px;
+  padding-bottom: 0px;
+}
+
+.masthead strike {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.masthead h2 {
+  font-weight: normal;
+  margin: -10px 0 16px 0px;
+  font-size: 1.75em;
+  border-bottom: none;
+  line-height: 1;
+}
+
+.masthead .menu {
+  width: 375px;
+}
+
+.masthead p {
+  font-size: 1.5em;
+  margin: 1em 0em 1.5em;
+  padding: 0px;
+}
+
+.footer.link.list {
+  display: block;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}

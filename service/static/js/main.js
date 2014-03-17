@@ -3,7 +3,7 @@ require.config({
         jquery: 'lib/jquery-1.11.0.min',
         underscore: 'lib/underscore-min',
         backbone: 'lib/backbone-min',
-        bootstrap: 'lib/bootstrap.min',
+        semantic: 'lib/semantic.min',
         handlebars: 'lib/handlebars-1.3.0',
         text: 'lib/text',
     },
@@ -15,9 +15,8 @@ require.config({
         underscore: {
             exports: '_'
         },
-        bootstrap: {
-            deps: ["jquery"],
-            exports: 'bootstrap'
+        semantic: {
+            exports: 'Semantic'
         },
         handlebars: {
             exports: 'Handlebars'
@@ -30,9 +29,9 @@ require([
     'jquery',
     'underscore',
     'backbone',
-    'bootstrap',
+    'semantic',
     'handlebars',
-], function(Router, $, _, Backbone, Bootstrap, Handlebars) {
+], function(Router, $, _, Backbone, Semantic, Handlebars) {
     Router.initialize();
 });
 

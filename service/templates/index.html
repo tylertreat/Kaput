@@ -2,15 +2,36 @@
 
 {% block content %}
 
-{% if user.is_authenticated() %}
-    Hello, {{ user.username }}  | <a href="/logout">Logout</a>
-    <ul>
-        {% for repo in user.get_github_repos() %}
-            <li><a href="/repo/{{ repo.name }}">{{ repo.name }}</a></li>
-        {% endfor %}
-    </ul>
-{% else %}
-    Hello! <a href="/login">Login</a>
-{% endif %}
+<div class="header segment">
+    <div class="ui page two column grid">
+        <div class="column">
+            <h1 class="ui header">Kaput.io</h1>
+        </div>
+        <div class="column">
+        {% if user.is_authenticated() %}
+            Hello, {{ user.username }}  | <a href="/logout">Logout</a>
+        {% else %}
+            <a href="/login" class="ui button green pull-right">
+                <i class="icon user"></i> Login
+            </a>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="banner" class="masthead segment">
+  <div class="ui page two column grid">
+    <div class="column">
+        <h1 class="ui header">Rapid response that's actually rapid.</h1>
+        <h2 class="ui header">Intelligent issue awareness lets your teams respond to problems as they arise, in real-time.</h2>
+        <a class="ui black large labeled launch icon button"><i class="icon list layout"></i> Do Something</a>
+        <a class="ui red large labeled icon button" href="build/semantic.zip"><i class="awesome download cloud icon"></i> Do Something Else</a>
+    </div>
+    <div class="column">
+        <img class="pull-right" src="static/images/diagram.png" width="550" />
+    </div>
+  </div>
+</div>
+
 
 {% endblock content %}
