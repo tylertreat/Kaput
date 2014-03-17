@@ -60,7 +60,7 @@ def enable_repo(name):
 @blueprint.route('/login')
 def login():
     if current_user.is_authenticated():
-        return redirect('/')
+        return redirect('/#/dashboard')
 
     return gh.authorize()
 
@@ -86,12 +86,12 @@ def authorized():
     user = User.query().filter(User.github_access_token == access_token).get()
 
     if not user:
-        gh_user = gh.client().get_user()
+        gh_user = gh.client(access_token).get_user()
         user = User(id='github_%s' % gh_user.id, username=gh_user.login,
                     email=gh_user.email, github_access_token=access_token)
         user.put()
 
     login_user(user)
 
-    return redirect('/')
+    return redirect('/#/dashboard')
 

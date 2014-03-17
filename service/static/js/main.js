@@ -6,6 +6,9 @@ require.config({
         semantic: 'lib/semantic.min',
         handlebars: 'lib/handlebars-1.3.0',
         text: 'lib/text',
+
+        HomeView: 'views/HomeView',
+        DashboardView: 'views/DashboardView',
     },
     shim: {
         backbone: {

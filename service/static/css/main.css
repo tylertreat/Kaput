@@ -43,6 +43,7 @@ ul.list li {
 .masthead {
   position: relative;
   overflow: hidden;
+  background-color: #3F81A7;
   background-image: -webkit-gradient(
     linear,
     left top,
