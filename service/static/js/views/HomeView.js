@@ -3,19 +3,16 @@ define([
   'underscore',
   'backbone',
   'templates',
-], function($, _, Backbone, Templates) {
+  'BaseView',
+], function($, _, Backbone, Templates, BaseView) {
     "use strict";
 
-    var HomeView = Backbone.View.extend({
-        el: $('#container'),
+    var HomeView = BaseView.extend({
         template: Templates.Home.index(),
 
-        initialize: function() {
-            this.render();
-        },
-
         render: function() {
-            this.$el.html(this.template);
+            this.$el.html(this.template());
+            return this;
         }
     });
 

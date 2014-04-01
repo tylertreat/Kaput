@@ -3,24 +3,23 @@ define([
   'underscore',
   'backbone',
   'templates',
-], function($, _, Backbone, Templates) {
+  'BaseView',
+], function($, _, Backbone, Templates, BaseView) {
     "use strict";
 
     var Dashboard = {};
 
-    Dashboard.DashboardView = Backbone.View.extend({
-        el: $('#container'),
+    Dashboard.DashboardView = BaseView.extend({
         template: Templates.Dashboard.dashboard(),
 
         initialize: function() {
-            this.render();
-            this.reposView = new Dashboard.ReposView({
-                el: this.$('#repos')
-            });
+            this.reposView = new Dashboard.ReposView();
         },
 
         render: function() {
-            this.$el.html(this.template);
+            this.$el.html(this.template());
+            this.assign(this.reposView, '#repos');
+            return this;
         },
 
         close: function() {
@@ -32,12 +31,9 @@ define([
     Dashboard.ReposView = Backbone.View.extend({
         template: Templates.Dashboard.repos(),
 
-        initialize: function() {
-            this.render();
-        },
-
         render: function() {
-            this.$el.html(this.template);
+            this.$el.html(this.template());
+            return this;
         }
     });
 

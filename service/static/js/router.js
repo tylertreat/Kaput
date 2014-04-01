@@ -13,17 +13,22 @@ define([
         },
 
         index: function() {
-            this.loadView(new HomeView());
+            this.showView('#container', new HomeView());
         },
 
         dashboard: function() {
-            this.loadView(new DashboardView.DashboardView());
+            this.showView('#container', new DashboardView.DashboardView());
         },
 
-        loadView: function(view) {
-            this.view && (this.view.close ? this.view.close() : this.view.remove());
-            this.view = view;
-        }
+        showView: function(selector, view) {
+            if (this.currentView) {
+                this.currentView.close();
+            }
+
+            $(selector).html(view.render().el);
+            this.currentView = view;
+            return view;
+        },
     });
 
     var initialize = function() {

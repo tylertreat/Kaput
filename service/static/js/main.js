@@ -7,6 +7,7 @@ require.config({
         handlebars: 'lib/handlebars-1.3.0',
         text: 'lib/text',
 
+        BaseView: 'views/BaseView',
         HomeView: 'views/HomeView',
         DashboardView: 'views/DashboardView',
     },
@@ -29,12 +30,7 @@ require.config({
 
 require([
     'router',
-    'jquery',
-    'underscore',
-    'backbone',
-    'semantic',
-    'handlebars',
-], function(Router, $, _, Backbone, Semantic, Handlebars) {
+], function(Router) {
     Router.initialize();
 });
 
