@@ -3,8 +3,6 @@ import logging
 import json
 
 from flask import redirect
-from flask.ext.login import current_user
-from github import Github
 
 from kaput import settings
 
@@ -51,27 +49,4 @@ def exchange_for_token(session_code):
         return None
 
     return content.get('access_token')
-
-
-def client(token=None):
-    if token:
-        return GitHub(token)
-
-    assert current_user.is_authenticated()
-
-    return GitHub(current_user.github_access_token)
-
-
-class GitHub(object):
-
-    def __init__(self, oauth_token):
-        self.github = Github(client_id=settings.GITHUB_CLIENT_ID,
-                             client_secret=settings.GITHUB_CLIENT_SECRET,
-                             login_or_token=oauth_token)
-
-    def get_user(self):
-        return self.github.get_user()
-
-    def get_repo(self, name):
-        return self.github.get_repo(name)
 

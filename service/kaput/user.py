@@ -4,8 +4,8 @@ import logging
 from google.appengine.ext import ndb
 
 from flask.ext.login import UserMixin
+from github import Github
 
-from kaput.services import gh
 from kaput.settings import login_manager
 
 
@@ -40,7 +40,10 @@ class User(ndb.Model, UserMixin):
 
     @github_required
     def github_client(self):
-        return gh.client(self.github_access_token)
+        if not hasattr(self, '_github') or not self._github:
+            self._github = Github(self.github_access_token)
+
+        return self._github
 
     @github_required
     def get_github_repos(self):

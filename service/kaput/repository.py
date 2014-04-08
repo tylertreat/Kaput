@@ -5,15 +5,16 @@ from google.appengine.ext import ndb
 
 from furious import context
 from furious.async import defaults
+from github import Github
 
-from kaput.services import gh
 from kaput.user import User
+from kaput.utils import SerializableModel
 
 
 COMMIT_QUEUE = 'commit-aggregation'
 
 
-class Repository(ndb.Model):
+class Repository(SerializableModel):
     """Git repository."""
 
     # The name of the repo.
@@ -49,6 +50,32 @@ class CommitHunk(ndb.Model):
     filename = ndb.StringProperty()
     lines = ndb.IntegerProperty(repeated=True)
     timestamp = ndb.DateTimeProperty()
+
+
+def sync_repos(user_id):
+    """Sync the user's GitHub repos by creating a Repository entity for each
+    one.
+
+    Args:
+        user_id: the id of the User to sync repos for.
+    """
+
+    user = User.get_by_id(user_id)
+    github_repos = user.get_github_repos()
+    repo_keys = [ndb.Key(Repository, 'github_%s' % repo.id) for repo in
+                 github_repos]
+    repos = ndb.get_multi(repo_keys)
+
+    to_create = [github_repos[index]
+                 for index, repo in enumerate(repos) if not repo]
+
+    to_create = [Repository(id='github_%s' % repo.id, name=repo.name,
+                            owner=user.key) for repo in to_create]
+
+    logging.debug('Creating %d Repositories' % len(to_create))
+    ndb.put_multi(to_create)
+
+    return to_create
 
 
 def process_repo_push(repo, owner, push_data):
@@ -115,7 +142,7 @@ def process_commit(repo_id, commit_id, owner_token):
 
 
 def _get_commit(repo_name, commit_id, owner_token):
-    github = gh.client(owner_token)
+    github = Github(owner_token)
     user = github.get_user()
     return user.get_repo(repo_name).get_commit(commit_id)
 

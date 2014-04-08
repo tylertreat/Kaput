@@ -198,10 +198,10 @@ class TestProcessCommit(unittest.TestCase):
         mock_put_multi.assert_called_once_with(commit_hunks)
 
 
-@patch('kaput.repository.gh.client')
+@patch('kaput.repository.Github')
 class TestGetCommit(unittest.TestCase):
 
-    def test_get_commit(self, mock_client):
+    def test_get_commit(self, mock_github):
         """Ensure _get_commit returns a commit object for the correct repo."""
 
         github = Mock()
@@ -211,7 +211,7 @@ class TestGetCommit(unittest.TestCase):
         mock_repo.get_commit.return_value = mock_commit
         mock_user.get_repo.return_value = mock_repo
         github.get_user.return_value = mock_user
-        mock_client.return_value = github
+        mock_github.return_value = github
 
         repo_name = 'foo'
         commit_id = 'abc'
@@ -219,9 +219,49 @@ class TestGetCommit(unittest.TestCase):
 
         actual = repository._get_commit(repo_name, commit_id, owner_token)
 
-        mock_client.assert_called_once_with(owner_token)
+        mock_github.assert_called_once_with(owner_token)
         github.get_user.assert_called_once_with()
         mock_user.get_repo.assert_called_once_with(repo_name)
         mock_repo.get_commit.assert_called_once_with(commit_id)
         self.assertEqual(mock_commit, actual)
+
+
+@patch('kaput.repository.Repository')
+@patch('kaput.repository.ndb')
+@patch('kaput.repository.User.get_by_id')
+class TestSyncRepos(unittest.TestCase):
+
+    def test_sync(self, mock_get_by_id, mock_ndb, mock_repo):
+        """Ensure that a Repository entity is created for every GitHub repo
+        that doesn't already have an entity and the list of created entities is
+        returned.
+        """
+
+        mock_user = Mock()
+        repo1 = Mock()
+        repo1.id = 'repo1'
+        repo2 = Mock()
+        repo2.id = 'repo2'
+        repo2.name = 'repo2'
+        mock_user.get_github_repos.return_value = [repo1, repo2]
+        mock_get_by_id.return_value = mock_user
+        key1 = Mock()
+        key2 = Mock()
+        keys = [key1, key2]
+        mock_ndb.Key.side_effect = keys
+        mock_ndb.get_multi.return_value = [repo1, None]
+        user_id = '123'
+
+        actual = repository.sync_repos(user_id)
+
+        self.assertEqual([mock_repo.return_value], actual)
+        mock_get_by_id.assert_called_once_with(user_id)
+        mock_user.get_github_repos.assert_called_once_with()
+        expected = [call(repository.Repository, 'github_%s' % repo.id)
+                    for repo in [repo1, repo2]]
+        self.assertEqual(expected, mock_ndb.Key.call_args_list)
+        mock_ndb.get_multi.assert_called_once_with(keys)
+        mock_repo.assert_called_once_with(id='github_%s' % repo2.id,
+                                          name=repo2.name, owner=mock_user.key)
+        mock_ndb.put_multi.assert_called_once_with([mock_repo.return_value])
 

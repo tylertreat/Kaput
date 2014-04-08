@@ -6,6 +6,7 @@ from flask.ext.login import current_user
 from flask.ext.login import login_required
 from flask.ext.login import login_user
 from flask.ext.login import logout_user
+from github import Github
 
 from kaput.services import gh
 from kaput.repository import Repository
@@ -86,7 +87,7 @@ def authorized():
     user = User.query().filter(User.github_access_token == access_token).get()
 
     if not user:
-        gh_user = gh.client(access_token).get_user()
+        gh_user = Github(access_token).get_user()
         user = User(id='github_%s' % gh_user.id, username=gh_user.login,
                     email=gh_user.email, github_access_token=access_token)
         user.put()
