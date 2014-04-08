@@ -8,23 +8,22 @@ from furious.async import defaults
 from github import Github
 
 from kaput.user import User
-from kaput.utils import SerializableModel
+from kaput.utils import SerializableMixin
 
 
 COMMIT_QUEUE = 'commit-aggregation'
 
 
-class Repository(SerializableModel):
+class Repository(ndb.Model, SerializableMixin):
     """Git repository."""
 
-    # The name of the repo.
     name = ndb.StringProperty()
-
-    # The User this repo belongs to.
+    description = ndb.StringProperty(indexed=False)
     owner = ndb.KeyProperty(kind=User)
-
-    # Process webhooks for this repo?
     enabled = ndb.BooleanProperty(default=False)
+
+    def to_dict(self):
+        return super(Repository, self).to_dict_(excludes=('key',))
 
 
 class Commit(ndb.Model):
@@ -52,15 +51,18 @@ class CommitHunk(ndb.Model):
     timestamp = ndb.DateTimeProperty()
 
 
-def sync_repos(user_id):
+def sync_repos(user):
     """Sync the user's GitHub repos by creating a Repository entity for each
     one.
 
     Args:
-        user_id: the id of the User to sync repos for.
+        user: the User to sync repos for.
+
+    Returns:
+        list of user's repositories.
     """
 
-    user = User.get_by_id(user_id)
+    logging.debug('Syncing Repositories for User %s' % user.key.id())
     github_repos = user.get_github_repos()
     repo_keys = [ndb.Key(Repository, 'github_%s' % repo.id) for repo in
                  github_repos]
@@ -70,12 +72,13 @@ def sync_repos(user_id):
                  for index, repo in enumerate(repos) if not repo]
 
     to_create = [Repository(id='github_%s' % repo.id, name=repo.name,
-                            owner=user.key) for repo in to_create]
+                            description=repo.description, owner=user.key)
+                 for repo in to_create]
 
     logging.debug('Creating %d Repositories' % len(to_create))
     ndb.put_multi(to_create)
 
-    return to_create
+    return filter(None, repos) + to_create
 
 
 def process_repo_push(repo, owner, push_data):

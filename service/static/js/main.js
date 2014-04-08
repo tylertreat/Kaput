@@ -10,6 +10,7 @@ require.config({
         BaseView: 'views/BaseView',
         HomeView: 'views/HomeView',
         DashboardView: 'views/DashboardView',
+        Repository: 'models/Repository',
     },
     shim: {
         backbone: {

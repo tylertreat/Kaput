@@ -38,6 +38,25 @@ class User(ndb.Model, UserMixin):
     def get_id(self):
         return self.key.id()
 
+    def owns(self, repos):
+        """Return True if the User is the owner of the given Repositories.
+
+        Args:
+            repos: Repository or list of Repositories.
+
+        Returns:
+            True if the User owns all Repositories, False otherwise.
+        """
+
+        if not isinstance(repos, list):
+            repos = [repos]
+
+        for repo in repos:
+            if repo.owner.id() != self.key.id():
+                return False
+
+        return True
+
     @github_required
     def github_client(self):
         if not hasattr(self, '_github') or not self._github:

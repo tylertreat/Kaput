@@ -8,13 +8,14 @@ define([
     var Repository = {};
 
     Repository.RepoModel = Backbone.Model.extend({
-        urlRoot: '/api/v1/repository'
+        url: '/api/v1/repo'
     });
     
-    DraftCalc.RepoCollection = Backbone.Collection.extend({
+    Repository.RepoCollection = Backbone.Collection.extend({
         model: Repository.RepoModel,
+        url: '/api/v1/repo',
     });
     
-    return DraftCalc;
+    return Repository;
 });
 

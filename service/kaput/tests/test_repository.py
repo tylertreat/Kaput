@@ -228,12 +228,11 @@ class TestGetCommit(unittest.TestCase):
 
 @patch('kaput.repository.Repository')
 @patch('kaput.repository.ndb')
-@patch('kaput.repository.User.get_by_id')
 class TestSyncRepos(unittest.TestCase):
 
-    def test_sync(self, mock_get_by_id, mock_ndb, mock_repo):
+    def test_sync(self, mock_ndb, mock_repo):
         """Ensure that a Repository entity is created for every GitHub repo
-        that doesn't already have an entity and the list of created entities is
+        that doesn't already have an entity and a list of the user's repos is
         returned.
         """
 
@@ -243,25 +242,24 @@ class TestSyncRepos(unittest.TestCase):
         repo2 = Mock()
         repo2.id = 'repo2'
         repo2.name = 'repo2'
+        repo2.description = 'description'
         mock_user.get_github_repos.return_value = [repo1, repo2]
-        mock_get_by_id.return_value = mock_user
         key1 = Mock()
         key2 = Mock()
         keys = [key1, key2]
         mock_ndb.Key.side_effect = keys
         mock_ndb.get_multi.return_value = [repo1, None]
-        user_id = '123'
 
-        actual = repository.sync_repos(user_id)
+        actual = repository.sync_repos(mock_user)
 
-        self.assertEqual([mock_repo.return_value], actual)
-        mock_get_by_id.assert_called_once_with(user_id)
+        self.assertEqual([repo1, mock_repo.return_value], actual)
         mock_user.get_github_repos.assert_called_once_with()
         expected = [call(repository.Repository, 'github_%s' % repo.id)
                     for repo in [repo1, repo2]]
         self.assertEqual(expected, mock_ndb.Key.call_args_list)
         mock_ndb.get_multi.assert_called_once_with(keys)
         mock_repo.assert_called_once_with(id='github_%s' % repo2.id,
+                                          description=repo2.description,
                                           name=repo2.name, owner=mock_user.key)
         mock_ndb.put_multi.assert_called_once_with([mock_repo.return_value])
 

@@ -9,6 +9,7 @@ define(function(require) {
     _templates.Dashboard = {
         dashboard: require('text!templates/dashboard/dashboard.tpl'),
         repos: require('text!templates/dashboard/repos.tpl'),
+        repoListItem: require('text!templates/dashboard/repo_list_item.tpl'),
     };
  
     return {
@@ -23,6 +24,9 @@ define(function(require) {
             },
             repos: function() {
                 return Handlebars.compile(_templates.Dashboard.repos);
+            },
+            repoListItem: function() {
+                return Handlebars.compile(_templates.Dashboard.repoListItem);
             },
         }
     }
