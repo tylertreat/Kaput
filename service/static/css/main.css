@@ -19,6 +19,10 @@ a {
   text-decoration: none;
 }
 
+.green {
+    color: #A5E099;
+}
+
 a:hover {
   color: #00BAFF;
 }
