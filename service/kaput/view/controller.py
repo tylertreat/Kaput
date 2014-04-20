@@ -20,7 +20,7 @@ def index():
 @blueprint.route('/login')
 def login():
     if current_user.is_authenticated():
-        return redirect('/#/dashboard')
+        return redirect('/')
 
     callback = '%s%s' % (settings.HOST, settings.GITHUB_REDIRECT_URI)
 
@@ -40,5 +40,5 @@ def logout():
 def github_authorized(credentials):
     """GitHub OAuth callback that is redirect to after the user consents."""
     user.login(credentials)
-    return redirect('/#/dashboard')
+    return redirect('/')
 

@@ -13,7 +13,11 @@ define([
         },
 
         index: function() {
-            this.showView('#container', new HomeView());
+            if (loggedIn) {
+                this.dashboard();
+            } else {
+                this.showView('#container', new HomeView());
+            }
         },
 
         dashboard: function() {

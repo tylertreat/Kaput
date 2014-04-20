@@ -11,6 +11,7 @@
     <link href="/static/css/main.css" rel="stylesheet">
     <link href="/static/css/font-awesome.min.css" rel="stylesheet">
 
+    <script>loggedIn = '{{ user.is_authenticated() }}' === 'True';</script>
     <script data-main="/static/js/main-built" src="/static/js/lib/require.js"></script>
 
     {% block style_block %}{# page-specific CSS #}{% endblock %}
