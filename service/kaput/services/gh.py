@@ -1,52 +1,63 @@
-from httplib2 import Http
 import logging
-import json
-
-from flask import redirect
-
-from kaput import settings
 
 
-AUTH_URL = 'https://github.com/login/oauth/authorize'
-ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
-OAUTH_SCOPES = 'repo,user:email'
+def get_webhook(repo, url):
+    """Retrieve the GitHub webhook with the given url from the repo.
 
+    Args:
+        repo: the Repository to get the webhook for.
+        url: the url of the webhook.
 
-def authorize():
-    """Kick off the OAuth web server flow. This will redirect the user to
-    GitHub for authorization, after which they will be redirected back.
+    Returns:
+        Hook instance or None if the hook doesn't exist.
     """
 
-    return redirect('%s?scope=%s&client_id=%s' % (AUTH_URL, OAUTH_SCOPES,
-                                                  settings.GITHUB_CLIENT_ID))
+    gh_repo = repo.owner.get().get_github_repo(repo.name)
+
+    for hook in gh_repo.get_hooks():
+        if hook.config.get('url') == url:
+            return hook
+
+    return None
 
 
-def exchange_for_token(session_code):
-    """Exchange the temporary session code for an OAuth access token."""
+def create_webhook(repo, url):
+    """Create a GitHub webhook for the given Repository. This is intended to be
+    idempotent, meaning it will check to see if the hook already exists before
+    creating it.
 
-    payload = json.dumps({
-        'client_id': settings.GITHUB_CLIENT_ID,
-        'client_secret': settings.GITHUB_CLIENT_SECRET,
-        'code': session_code
-    })
+    Args:
+        repo: the Repository to create the webhook for.
+        url: the webhook url.
 
-    headers = {
-        'Accept': 'application/json', 'Content-Type':
-        'application/json'
-    }
+    Returns:
+        True if the webhook was successfully created or already exists, False
+        if it failed to be created.
+    """
 
-    resp, content = Http().request(ACCESS_TOKEN_URL, method='POST',
-                                   body=payload, headers=headers)
+    if get_webhook(repo, url):
+        logging.debug('%s already has webhook %s' % (repo, url))
+        return True
 
-    if resp.status != 200:
-        logging.error('Failed to exchange GitHub access token')
-        return None
+    repo = repo.owner.get().get_github_repo(repo.name)
 
-    content = json.loads(content)
+    hook = repo.create_hook('web', {'url': url, 'content_type': 'json'},
+                            events=['push'], active=True)
 
-    if 'access_token' not in content:
-        logging.error('Failed to exchange GitHub access token')
-        return None
+    return hook is not None
 
-    return content.get('access_token')
+
+def delete_webhook(repo, url):
+    """Delete the GitHub webhook for the given Repository.
+
+    Args:
+        repo: the Repository to delete the webhook for.
+        url: the url of the webhook to delete.
+    """
+
+    hook = get_webhook(repo, url)
+
+    if hook:
+        logging.debug('Deleting webhook %s for %s' % (url, repo))
+        hook.delete()
 

@@ -9,6 +9,7 @@ from github import Github
 
 from kaput import settings
 from kaput.auth.user import User
+from kaput.services import gh
 from kaput.utils import SerializableMixin
 
 
@@ -36,12 +37,7 @@ class Repository(ndb.Model, SerializableMixin):
             Hook instance or None if the hook doesn't exist.
         """
 
-        repo = self.owner.get().get_github_repo(self.name)
-        for hook in repo.get_hooks():
-            if hook.config.get('url') == settings.KAPUT_WEBHOOK_URI:
-                return hook
-
-        return None
+        return gh.get_webhook(self, settings.KAPUT_WEBHOOK_URI)
 
     def create_webhook(self):
         """Create a GitHub webhook for this repository. This is intended to be
@@ -53,25 +49,12 @@ class Repository(ndb.Model, SerializableMixin):
             False if it failed to be created.
         """
 
-        if self.get_webhook():
-            logging.debug('%s already has Kaput webhook' % self)
-            return True
-
-        repo = self.owner.get().get_github_repo(self.name)
-        hook = repo.create_hook(
-            'web', {'url': settings.KAPUT_WEBHOOK_URI, 'content_type': 'json'},
-            events=['push'], active=True)
-
-        return hook is not None
+        return gh.create_webhook(self, settings.KAPUT_WEBHOOK_URI)
 
     def delete_webhook(self):
         """Delete the GitHub webhook for this repository."""
 
-        hook = self.get_webhook()
-
-        if hook:
-            logging.debug('Deleting Kaput webhook for %s' % self)
-            hook.delete()
+        gh.delete_webhook(self, settings.KAPUT_WEBHOOK_URI)
 
 
 class Commit(ndb.Model):
