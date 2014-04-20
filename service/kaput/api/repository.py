@@ -1,11 +1,11 @@
 import json
-import logging
 
 from flask import request
 from flask.ext.login import current_user
 from flask.ext.login import login_required
 
 from kaput.api.blueprint import blueprint
+from kaput.repository import enable_repo
 from kaput.repository import Repository
 
 
@@ -44,7 +44,7 @@ def update_repo():
     if not repo_id:
         return json.dumps({'message': 'Missing required id field'}), 400
 
-    repo = Repository.get_by_id(repo_id)
+    repo = Repository.get_by_id(repo_id, parent=current_user.key)
 
     if not repo:
         return json.dumps({'message': 'Repo %s does not exist' % repo_id}), 404
@@ -54,9 +54,8 @@ def update_repo():
                            (current_user.key.id(), repo_id)}), 403
 
     enabled = update.get('enabled', repo.enabled)
-    repo.enabled = enabled
-    repo.put()
-    logging.debug('Updated Repository %s' % repo.key.id())
+
+    enable_repo(repo, enabled)
 
     return json.dumps(repo.to_dict()), 200
 

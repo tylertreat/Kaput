@@ -25,7 +25,7 @@ class TestProcessRepoPush(unittest.TestCase):
         repo_key.id.return_value = 'repo'
         repo.key = repo_key
         owner = Mock()
-        owner.github_access_token = 'token'
+        owner.github_token = 'token'
         commits = ['29fd6f4019d273bcac077d5f003623b8c78d8314',
                    '5575528bd903f296f835b9bd85be34b19ea8d6e1']
         data = {
@@ -90,10 +90,10 @@ class TestProcessRepoPush(unittest.TestCase):
         expected = [
             call(target=process_commit, args=(repo_key.id.return_value,
                                               commits[0],
-                                              owner.github_access_token)),
+                                              owner.key.id())),
             call(target=process_commit, args=(repo_key.id.return_value,
                                               commits[1],
-                                              owner.github_access_token))
+                                              owner.key.id()))
         ]
 
         self.assertEqual(expected, context.add.call_args_list)
@@ -156,7 +156,9 @@ class TestProcessCommit(unittest.TestCase):
         commit.author_date = mock_author.date
         mock_commit_init.return_value = commit
 
+        owner_token = 'token'
         user = User(id=123)
+        user.github_token = owner_token
         mock_get_user.return_value = user
 
         commit_hunks = [Mock(), Mock()]
@@ -164,15 +166,15 @@ class TestProcessCommit(unittest.TestCase):
 
         repo_id = '123'
         commit_id = 'abc'
-        owner_token = 'token'
 
-        repository.process_commit(repo_id, commit_id, owner_token)
+        repository.process_commit(repo_id, commit_id, user.key.id())
 
-        mock_get_repo.assert_called_once_with(repo_id)
+        mock_get_repo.assert_called_once_with(repo_id, parent=user.key)
         mock_get_commit.assert_called_once_with(repo.name, commit_id,
                                                 owner_token)
 
-        self.assertEqual([call('github_%s' % mock_author.id),
+        self.assertEqual([call(user.key.id()),
+                          call('github_%s' % mock_author.id),
                           call('github_%s' % mock_committer.id)],
                          mock_get_user.call_args_list)
 
@@ -258,6 +260,7 @@ class TestSyncRepos(unittest.TestCase):
         self.assertEqual(expected, mock_ndb.Key.call_args_list)
         mock_ndb.get_multi.assert_called_once_with(keys)
         mock_repo.assert_called_once_with(id='github_%s' % repo2.id,
+                                          parent=mock_user.key,
                                           description=repo2.description,
                                           name=repo2.name, owner=mock_user.key)
         mock_ndb.put_multi.assert_called_once_with([mock_repo.return_value])

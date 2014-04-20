@@ -14,6 +14,7 @@ if os.environ.get('SERVER_SOFTWARE', '').startswith('Dev'):
 login_manager = LoginManager()
 
 HOST = 'https://%s' % app_identity.get_default_version_hostname()
+KAPUT_WEBHOOK_ENDPOINT = '/v1/push'
 
 GITHUB_CLIENT_ID = 'changeme'
 GITHUB_CLIENT_SECRET = 'changeme'
@@ -31,4 +32,6 @@ if settingslocal:
 
 if DEBUG:
     HOST = 'http://localhost:8080'
+
+KAPUT_WEBHOOK_URI = '%s/api%s' % (HOST, KAPUT_WEBHOOK_ENDPOINT)
 

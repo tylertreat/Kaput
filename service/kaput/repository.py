@@ -7,6 +7,7 @@ from furious import context
 from furious.async import defaults
 from github import Github
 
+from kaput import settings
 from kaput.auth.user import User
 from kaput.utils import SerializableMixin
 
@@ -22,8 +23,55 @@ class Repository(ndb.Model, SerializableMixin):
     owner = ndb.KeyProperty(kind=User)
     enabled = ndb.BooleanProperty(default=False)
 
+    def __repr__(self):
+        return '<Repository %r>' % self.name
+
     def to_dict(self):
         return super(Repository, self).to_dict_(excludes=('key',))
+
+    def get_webhook(self):
+        """Get the Kaput GitHub webhook for this repository.
+
+        Returns:
+            Hook instance or None if the hook doesn't exist.
+        """
+
+        repo = self.owner.get().get_github_repo(self.name)
+        for hook in repo.get_hooks():
+            if hook.config.get('url') == settings.KAPUT_WEBHOOK_URI:
+                return hook
+
+        return None
+
+    def create_webhook(self):
+        """Create a GitHub webhook for this repository. This is intended to be
+        idempotent, meaning it will check to see if the hook already exists
+        before creating it.
+
+        Returns:
+            True if the webhook was successfully created or already exists,
+            False if it failed to be created.
+        """
+
+        if self.get_webhook():
+            logging.debug('%s already has Kaput webhook' % self)
+            return True
+
+        repo = self.owner.get().get_github_repo(self.name)
+        hook = repo.create_hook(
+            'web', {'url': settings.KAPUT_WEBHOOK_URI, 'content_type': 'json'},
+            events=['push'], active=True)
+
+        return hook is not None
+
+    def delete_webhook(self):
+        """Delete the GitHub webhook for this repository."""
+
+        hook = self.get_webhook()
+
+        if hook:
+            logging.debug('Deleting Kaput webhook for %s' % self)
+            hook.delete()
 
 
 class Commit(ndb.Model):
@@ -71,14 +119,36 @@ def sync_repos(user):
     to_create = [github_repos[index]
                  for index, repo in enumerate(repos) if not repo]
 
-    to_create = [Repository(id='github_%s' % repo.id, name=repo.name,
-                            description=repo.description, owner=user.key)
+    to_create = [Repository(id='github_%s' % repo.id, parent=user.key,
+                            name=repo.name, description=repo.description,
+                            owner=user.key)
                  for repo in to_create]
 
     logging.debug('Creating %d Repositories' % len(to_create))
     ndb.put_multi(to_create)
 
     return filter(None, repos) + to_create
+
+
+@ndb.transactional
+def enable_repo(repo, enabled):
+    """Update the given repo by enabling/disabling it. This will not only
+    update the Repo model, but also create or delete the GitHub webhook on the
+    repo if it was enabled or disabled respectively.
+
+    Args:
+        repo: the Repo to update.
+        enabled: bool indicating if the Repo is enabled or disabled.
+    """
+
+    repo.enabled = enabled
+    logging.debug('Saving %s, enabled: %s' % (repo, enabled))
+    repo.put()
+
+    if enabled:
+        repo.create_webhook()
+    else:
+        repo.delete_webhook()
 
 
 def process_repo_push(repo, owner, push_data):
@@ -99,25 +169,25 @@ def process_repo_push(repo, owner, push_data):
 
             ctx.add(
                 target=process_commit,
-                args=(repo.key.id(), commit['id'], owner.github_access_token))
+                args=(repo.key.id(), commit['id'], owner.key.id()))
 
     logging.debug('Inserted %d fan-out tasks' % ctx.insert_success)
 
 
 @defaults(queue=COMMIT_QUEUE)
-def process_commit(repo_id, commit_id, owner_token):
+def process_commit(repo_id, commit_id, owner_id):
     """Process a single commit that was made to a repo by collecting data for
     it.
 
     Args:
         repo_id: the id for the repo the commit was for.
         commit_id: the SHA hash of the commit.
-        owner_token: OAuth access token for the owner of the repo.
+        owner_id: id of the owner of the repo.
     """
 
-    # TODO: error handling/retries
-    repo = Repository.get_by_id(repo_id)
-    gh_commit = _get_commit(repo.name, commit_id, owner_token)
+    owner = User.get_by_id(owner_id)
+    repo = Repository.get_by_id(repo_id, parent=owner.key)
+    gh_commit = _get_commit(repo.name, commit_id, owner.github_token)
     author = gh_commit.commit.author
     committer = gh_commit.commit.committer
 

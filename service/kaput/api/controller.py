@@ -3,6 +3,7 @@ import logging
 
 from flask import request
 
+from kaput import settings
 from kaput.api.blueprint import blueprint
 from kaput.report import process_exception
 from kaput.repository import process_repo_push
@@ -20,7 +21,7 @@ def handle_exception():
     return 'Processing exception', 200
 
 
-@blueprint.route('/v1/push', methods=['POST'])
+@blueprint.route(settings.KAPUT_WEBHOOK_ENDPOINT, methods=['POST'])
 def process_git_push():
     # TODO: Verify request origin.
     push_data = json.loads(request.data)
