@@ -114,7 +114,6 @@ class TestProcessCommit(unittest.TestCase):
         """Ensure process_commit saves a Commit and CommitHunks to the
         datastore.
         """
-        from kaput.auth.user import User
 
         repo = repository.Repository(id=123, name='foo')
         mock_get_repo.return_value = repo
