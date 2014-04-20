@@ -41,8 +41,12 @@ define([
             this.collection = new Repository.RepoCollection();
             this.collection.fetch({
                 reset: true,
-                success: function() {
-                    thisView.render();
+                success: function(collection) {
+                    if (collection.length === 0) {
+                        thisView.syncRepos();
+                    } else {
+                        thisView.render();
+                    }
                 },
             });
         },
