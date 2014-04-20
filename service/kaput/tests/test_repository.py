@@ -112,7 +112,7 @@ class TestProcessCommit(unittest.TestCase):
         """Ensure process_commit saves a Commit and CommitHunks to the
         datastore.
         """
-        from kaput.user import User
+        from kaput.auth.user import User
 
         repo = repository.Repository(id=123, name='foo')
         mock_get_repo.return_value = repo
@@ -243,7 +243,7 @@ class TestSyncRepos(unittest.TestCase):
         repo2.id = 'repo2'
         repo2.name = 'repo2'
         repo2.description = 'description'
-        mock_user.get_github_repos.return_value = [repo1, repo2]
+        mock_user.github_repos = [repo1, repo2]
         key1 = Mock()
         key2 = Mock()
         keys = [key1, key2]
@@ -253,7 +253,6 @@ class TestSyncRepos(unittest.TestCase):
         actual = repository.sync_repos(mock_user)
 
         self.assertEqual([repo1, mock_repo.return_value], actual)
-        mock_user.get_github_repos.assert_called_once_with()
         expected = [call(repository.Repository, 'github_%s' % repo.id)
                     for repo in [repo1, repo2]]
         self.assertEqual(expected, mock_ndb.Key.call_args_list)

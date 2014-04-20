@@ -13,13 +13,11 @@ if os.environ.get('SERVER_SOFTWARE', '').startswith('Dev'):
 
 login_manager = LoginManager()
 
-# Flask-Cache settings
-CACHE_TYPE = 'gaememcached'
+HOST = 'https://%s' % app_identity.get_default_version_hostname()
 
 GITHUB_CLIENT_ID = 'changeme'
 GITHUB_CLIENT_SECRET = 'changeme'
-GITHUB_CALLBACK_URL = \
-    'https://%s/authorized' % app_identity.get_default_version_hostname()
+GITHUB_REDIRECT_URI = '/github_authorized'
 
 
 try:
@@ -30,4 +28,7 @@ except ImportError:
 if settingslocal:
     for setting in dir(settingslocal):
         globals()[setting.upper()] = getattr(settingslocal, setting)
+
+if DEBUG:
+    HOST = 'http://localhost:8080'
 

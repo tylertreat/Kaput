@@ -7,7 +7,7 @@ from furious import context
 from furious.async import defaults
 from github import Github
 
-from kaput.user import User
+from kaput.auth.user import User
 from kaput.utils import SerializableMixin
 
 
@@ -62,8 +62,8 @@ def sync_repos(user):
         list of user's repositories.
     """
 
-    logging.debug('Syncing Repositories for User %s' % user.key.id())
-    github_repos = user.get_github_repos()
+    logging.debug('Syncing Repositories for %s' % user)
+    github_repos = user.github_repos
     repo_keys = [ndb.Key(Repository, 'github_%s' % repo.id) for repo in
                  github_repos]
     repos = ndb.get_multi(repo_keys)
