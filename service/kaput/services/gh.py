@@ -39,10 +39,10 @@ def create_webhook(repo, url):
         logging.debug('%s already has webhook %s' % (repo, url))
         return True
 
-    repo = repo.owner.get().get_github_repo(repo.name)
+    gh_repo = repo.owner.get().get_github_repo(repo.name)
 
-    hook = repo.create_hook('web', {'url': url, 'content_type': 'json'},
-                            events=['push'], active=True)
+    hook = gh_repo.create_hook('web', {'url': url, 'content_type': 'json'},
+                               events=['push'], active=True)
 
     return hook is not None
 
@@ -53,6 +53,9 @@ def delete_webhook(repo, url):
     Args:
         repo: the Repository to delete the webhook for.
         url: the url of the webhook to delete.
+
+    Returns:
+        True if the hook was deleted, False if nothing was deleted.
     """
 
     hook = get_webhook(repo, url)
@@ -60,4 +63,7 @@ def delete_webhook(repo, url):
     if hook:
         logging.debug('Deleting webhook %s for %s' % (url, repo))
         hook.delete()
+        return True
+
+    return False
 
