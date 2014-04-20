@@ -21,7 +21,11 @@ define([
         },
 
         dashboard: function() {
-            this.showView('#container', new DashboardView.DashboardView());
+            if (loggedIn) {
+                this.showView('#container', new DashboardView.DashboardView());
+            } else {
+                this.index();
+            }
         },
 
         showView: function(selector, view) {
