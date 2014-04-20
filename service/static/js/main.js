@@ -21,6 +21,7 @@ require.config({
             exports: '_'
         },
         semantic: {
+            deps: ['jquery'],
             exports: 'Semantic'
         },
         handlebars: {
@@ -31,7 +32,10 @@ require.config({
 
 require([
     'router',
-], function(Router) {
+    'semantic',
+], function(Router, Semantic) {
     Router.initialize();
+
+    $('.ui.dropdown').dropdown();
 });
 

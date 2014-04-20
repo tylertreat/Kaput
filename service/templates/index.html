@@ -2,6 +2,25 @@
 
 {% block content %}
 
+<div class="header segment">
+    <div class="ui page two column grid">
+        <div class="column">
+            <h1 class="ui header">Kaput.io</h1>
+        </div>
+        <div class="column">
+        {% if user.is_authenticated() %}
+            <div class="pull-right" style="margin-top:10px">
+                Hello, {{ user.username }}  | <a href="/logout">Logout</a>
+            </div>
+        {% else %}
+            <a href="/login" class="ui button green pull-right">
+                <i class="icon user"></i> Login
+            </a>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
 <div id="container"></div>
 
 {% endblock content %}
