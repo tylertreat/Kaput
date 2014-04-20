@@ -1,11 +1,13 @@
 from datetime import datetime
 import unittest
 
+from gaeutils.test import DatastoreTestCase
 from mock import call
 from mock import Mock
 from mock import patch
 
 from kaput import repository
+from kaput.auth.user import User
 
 
 @patch('kaput.repository.context')
@@ -264,4 +266,80 @@ class TestSyncRepos(unittest.TestCase):
                                           description=repo2.description,
                                           name=repo2.name, owner=mock_user.key)
         mock_ndb.put_multi.assert_called_once_with([mock_repo.return_value])
+
+
+class TestEnableRepo(DatastoreTestCase):
+
+    def test_enable(self):
+        """Ensure that when a Repository is enabled, the entity is updated and
+        the webhook is created.
+        """
+
+        mock_repo = Mock()
+        mock_repo.enabled = False
+
+        repository.enable_repo(mock_repo, True)
+
+        self.assertTrue(mock_repo.enabled)
+        mock_repo.put.assert_called_once_with()
+        mock_repo.create_webhook.assert_called_once_with()
+
+    def test_disable(self):
+        """Ensure that when a Repository is disabled, the entity is updated and
+        the webhook is deleted.
+        """
+
+        mock_repo = Mock()
+        mock_repo.enabled = True
+
+        repository.enable_repo(mock_repo, False)
+
+        self.assertFalse(mock_repo.enabled)
+        mock_repo.put.assert_called_once_with()
+        mock_repo.delete_webhook.assert_called_once_with()
+
+
+@patch('kaput.repository.settings')
+class TestRepository(unittest.TestCase):
+
+    def setUp(self):
+        self.name = 'foo'
+        self.description = 'foo bar baz'
+        self.owner = User(username='user', email='email', github_token='token')
+        self.repo = repository.Repository(name=self.name,
+                                          description=self.description,
+                                          owner=self.owner.key)
+
+    @patch('kaput.repository.gh.get_webhook')
+    def test_get_webhook(self, mock_get_hook, mock_settings):
+        """Ensure that the Kaput webhook is returned."""
+
+        mock_settings.KAPUT_WEBHOOK_URI = 'http://localhost:8080/foo'
+
+        actual = self.repo.get_webhook()
+
+        self.assertEqual(mock_get_hook.return_value, actual)
+
+    @patch('kaput.repository.gh.create_webhook')
+    def test_create_webhook(self, mock_create_hook, mock_settings):
+        """Ensure that the Kaput webhook is created."""
+
+        mock_settings.KAPUT_WEBHOOK_URI = 'http://localhost:8080/foo'
+
+        actual = self.repo.create_webhook()
+
+        self.assertTrue(actual)
+        mock_create_hook.assert_called_once_with(
+            self.repo, mock_settings.KAPUT_WEBHOOK_URI)
+
+    @patch('kaput.repository.gh.delete_webhook')
+    def test_delete_webhook(self, mock_delete_hook, mock_settings):
+        """Ensure that the Kaput webhook is deleted."""
+
+        mock_settings.KAPUT_WEBHOOK_URI = 'http://localhost:8080/foo'
+
+        self.repo.delete_webhook()
+
+        mock_delete_hook.assert_called_once_with(
+            self.repo, mock_settings.KAPUT_WEBHOOK_URI)
 
