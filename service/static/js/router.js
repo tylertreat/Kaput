@@ -12,6 +12,10 @@ define([
             'dashboard': 'dashboard'
         },
 
+        initialize: function() {
+            this.dispatcher = _.clone(Backbone.Events);
+        },
+
         index: function() {
             if (sessionUser && sessionUser.is_authenticated) {
                 this.dashboard();
@@ -22,7 +26,9 @@ define([
 
         dashboard: function() {
             if (sessionUser && sessionUser.is_authenticated) {
-                this.showView('#container', new DashboardView.DashboardView());
+                this.showView('#container', new DashboardView.DashboardView({
+                    dispatcher: this.dispatcher
+                }));
             } else {
                 this.index();
             }

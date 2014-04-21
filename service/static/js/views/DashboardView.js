@@ -14,8 +14,13 @@ define([
     Dashboard.DashboardView = BaseView.extend({
         template: Templates.Dashboard.dashboard(),
 
-        initialize: function() {
-            this.reposView = new Dashboard.ReposView();
+        initialize: function(options) {
+            this.dispatcher = options.dispatcher;
+            this.reposView = new Dashboard.ReposView({
+                dispatcher: this.dispatcher
+            });
+
+            this.dispatcher.on('repo:selected', this.showRepo, this);
         },
 
         render: function() {
@@ -26,16 +31,25 @@ define([
 
         beforeClose: function() {
             this.reposView.close();
-        }
+            if (this.repoDetailsView) {
+                this.repoDetailsView.close();
+            }
+        },
+
+        showRepo: function(repo) {
+            this.repoDetailsView = new Dashboard.RepoDetailsView({model: repo});
+            this.assign(this.repoDetailsView, '#repo-details');
+        },
     });
 
-    Dashboard.ReposView = Backbone.View.extend({
+    Dashboard.ReposView = BaseView.extend({
         template: Templates.Dashboard.repos(),
         events: {
             'click .sync': 'syncRepos',
         },
 
-        initialize: function() {
+        initialize: function(options) {
+            this.dispatcher = options.dispatcher;
             var thisView = this;
             this.collection = new Repository.RepoCollection();
             this.collection.fetch({
@@ -53,7 +67,10 @@ define([
         render: function() {
             var thisView = this;
             this.repoViews = _(this.collection.models).map(function(repo) {
-                return new Dashboard.RepoView({model: repo});
+                return new Dashboard.RepoView({
+                    model: repo,
+                    dispatcher: thisView.dispatcher,
+                });
             }); 
             var lastSynced = Moment.unix(sessionUser.last_synced).fromNow();
             this.$el.empty();
@@ -62,6 +79,10 @@ define([
             _(this.repoViews).each(function(repoView) {
                 thisView.$('.repos').append(repoView.render().el);
             });
+
+            if (this.repoViews.length > 0) {
+                this.repoViews[0].selectRepo();
+            }
 
             return this;
         },
@@ -94,15 +115,22 @@ define([
         },
     });
 
-    Dashboard.RepoView = Backbone.View.extend({
+    Dashboard.RepoView = BaseView.extend({
         template: Templates.Dashboard.repoListItem(),
         events: {
-            'click .enable': 'toggleRepo'
+            'click .enable': 'toggleRepo',
+            'click': 'selectRepo',
+        },
+
+        initialize: function(options) {
+            this.dispatcher = options.dispatcher;
         },
 
         render: function() {
-            this.$el.empty();
-            this.$el.html(this.template({repo: this.model.toJSON()}));
+            var html = this.template({repo: this.model.toJSON()});
+            var $repo = $(html);
+            this.$el.replaceWith($repo);
+            this.setElement($repo);
             return this;
         },
 
@@ -124,6 +152,22 @@ define([
             } else {
                 $toggle.removeClass('active');
             }
+        },
+
+        selectRepo: function() {
+            this.$el.siblings('.item').removeClass('active');
+            this.$el.addClass('active');
+            this.dispatcher.trigger('repo:selected', this.model);
+        },
+
+    });
+
+    Dashboard.RepoDetailsView = BaseView.extend({
+        template: Templates.Dashboard.repoDetails(),
+
+        render: function() {
+            this.$el.html(this.template({repo: this.model.toJSON()}));
+            return this;
         },
 
     });

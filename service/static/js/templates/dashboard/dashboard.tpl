@@ -19,6 +19,6 @@
 <div id="dashboard">
     <div class="ui two column grid">
         <div id="repos" class="column"></div>
-        <div class="column">Repo info goes here</div>
+        <div id="repo-details" class="column"></div>
     </div>
 </div>
