@@ -1,5 +1,11 @@
 import logging
 
+from google.appengine.api import memcache
+
+from github import Github
+from github.AuthenticatedUser import AuthenticatedUser
+from github.Repository import Repository
+
 
 def get_webhook(repo, url):
     """Retrieve the GitHub webhook with the given url from the repo.
@@ -66,4 +72,51 @@ def delete_webhook(repo, url):
         return True
 
     return False
+
+
+def get_user(user):
+    """Retrieve the GitHub user object for the given User.
+
+    Args:
+        user: the User to retrieve the GitHub user for.
+
+    Returns:
+        GitHub AuthenticatedUser instance.
+    """
+
+    github = Github(user.github_token)
+    gh_user = memcache.get('gh:user:%s' % user.key.id())
+
+    if gh_user:
+        return github.create_from_raw_data(AuthenticatedUser, gh_user)
+
+    gh_user = github.get_user()
+    memcache.set('gh:user:%s' % user.key.id(), gh_user.raw_data)
+
+    return gh_user
+
+
+def get_repos(user, repo_type='owner'):
+    """Retrieve the User's GitHub repos.
+
+    Args:
+        user: the User to retrieve GitHub repos for.
+        repo_type: the type of repos to fetch (all, owner, public, private,
+                   member).
+
+    Returns:
+        list of Github Repository instances.
+    """
+
+    github = Github(user.github_token)
+    repos = memcache.get('gh:repos:%s' % user.key.id())
+
+    if repos:
+        return [github.create_from_raw_data(Repository, r) for r in repos]
+
+    gh_user = github.get_user()
+    repos = gh_user.get_repos(type=repo_type)
+    memcache.set('gh:repos:%s' % user.key.id(), [r.raw_data for r in repos])
+
+    return repos
 

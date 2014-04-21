@@ -2,10 +2,11 @@ define([
   'jquery',
   'underscore',
   'backbone',
+  'moment',
   'templates',
   'BaseView',
   'Repository',
-], function($, _, Backbone, Templates, BaseView, Repository) {
+], function($, _, Backbone, Moment, Templates, BaseView, Repository) {
     "use strict";
 
     var Dashboard = {};
@@ -18,7 +19,7 @@ define([
         },
 
         render: function() {
-            this.$el.html(this.template());
+            this.$el.html(this.template({user: sessionUser}));
             this.assign(this.reposView, '#repos');
             return this;
         },
@@ -56,8 +57,9 @@ define([
             this.collection.each(function(repo) {
                 thisView.repoViews.push(new Dashboard.RepoView({model: repo}));
             }); 
+            var lastSynced = Moment.unix(sessionUser.last_synced).fromNow();
             this.$el.empty();
-            this.$el.html(this.template());
+            this.$el.html(this.template({lastSynced: lastSynced}));
 
             _(this.repoViews).each(function(repoView) {
                 thisView.$('.repos').append(repoView.render().el);
@@ -70,10 +72,11 @@ define([
             var thisView = this;
             this.$('.sync').addClass('loading');
             $.ajax({
-                url: '/api/v1/repo/sync',
+                url: '/api/v1/user/sync',
                 method: 'POST',
                 dataType: 'json',
-                success: function(repos) {
+                success: function(user) {
+                    var repos = user.repos;
                     thisView.collection = new Repository.RepoCollection(repos);
                     thisView.render();
                 },

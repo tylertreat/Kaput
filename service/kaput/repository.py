@@ -1,6 +1,7 @@
 import logging
 import re
 
+from google.appengine.api import memcache
 from google.appengine.ext import ndb
 
 from furious import context
@@ -110,7 +111,10 @@ def sync_repos(user):
     logging.debug('Creating %d Repositories' % len(to_create))
     ndb.put_multi(to_create)
 
-    return filter(None, repos) + to_create
+    repos = filter(None, repos) + to_create
+    memcache.set('kaput:repos:%s' % user.key.id(), repos)
+
+    return repos
 
 
 @ndb.transactional

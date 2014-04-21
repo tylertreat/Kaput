@@ -13,7 +13,7 @@ define([
         },
 
         index: function() {
-            if (loggedIn) {
+            if (sessionUser && sessionUser.is_authenticated) {
                 this.dashboard();
             } else {
                 this.showView('#container', new HomeView());
@@ -21,7 +21,7 @@ define([
         },
 
         dashboard: function() {
-            if (loggedIn) {
+            if (sessionUser && sessionUser.is_authenticated) {
                 this.showView('#container', new DashboardView.DashboardView());
             } else {
                 this.index();

@@ -1,3 +1,16 @@
+<div class="header segment">
+    <div class="ui page two column grid">
+        <div class="column">
+            <h1 class="ui header">Kaput.io</h1>
+        </div>
+        <div class="column">
+            <a href="/login" class="ui button green pull-right">
+                <i class="icon user"></i> Login
+            </a>
+        </div>
+    </div>
+</div>
+
 <div id="banner" class="masthead segment">
   <div class="ui page two column grid">
     <div class="column">

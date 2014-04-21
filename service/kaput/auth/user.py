@@ -1,12 +1,16 @@
+from datetime import datetime
 import logging
 
+from google.appengine.api import memcache
 from google.appengine.ext import ndb
 
 from flask.ext.login import login_user
 from flask.ext.login import UserMixin
 from github import Github
 
+from kaput.services import gh
 from kaput.settings import login_manager
+from kaput.utils import SerializableMixin
 
 
 @login_manager.user_loader
@@ -14,14 +18,21 @@ def load_user(user_id):
     return User.get_by_id(user_id)
 
 
-class User(ndb.Model, UserMixin):
+class User(ndb.Model, UserMixin, SerializableMixin):
 
     username = ndb.StringProperty()
-    email = ndb.StringProperty()
+    primary_email = ndb.StringProperty()
+    emails = ndb.StringProperty(repeated=True)
     github_token = ndb.StringProperty()
+    last_synced = ndb.DateTimeProperty(required=False, indexed=False)
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+    def to_dict(self):
+        return super(User, self).to_dict_(
+            excludes=('github_token', 'key'),
+            includes=('is_authenticated', 'repos'))
 
     def get_id(self):
         return self.key.id()
@@ -50,24 +61,22 @@ class User(ndb.Model, UserMixin):
 
     @property
     def github_user(self):
-        if not hasattr(self, '_github_user') or not self._github_user:
-            self._github_user = Github(self.github_token).get_user()
-
-        return self._github_user
-
-    @property
-    def github_orgs(self):
-        if not hasattr(self, '_github_orgs') or not self._github_orgs:
-            self._github_orgs = self.github_user.get_orgs()
-
-        return self._github_orgs
+        return gh.get_user(self)
 
     @property
     def github_repos(self):
-        if not hasattr(self, '_github_repos') or not self._github_repos:
-            self._github_repos = self.github_user.get_repos(type='owner')
+        return gh.get_repos(self)
 
-        return self._github_repos
+    @property
+    def repos(self):
+        from kaput.repository import Repository
+
+        repos = memcache.get('kaput:repos:%s' % self.key.id())
+        if not repos:
+            repos = Repository.query(Repository.owner == self.key).fetch()
+            memcache.set('kaput:repos:%s' % self.key.id(), repos)
+
+        return repos
 
     def get_github_repo(self, name):
         return self.github_user.get_repo(name)
@@ -90,9 +99,60 @@ def login(credentials):
         user.github_token = access_token
     else:
         logging.debug('Creating new User entity for %s' % gh_user.login)
+        emails, primary_email = _get_email_addresses(gh_user)
         user = User(id='github_%s' % gh_user.id, username=gh_user.login,
-                    email=gh_user.email, github_token=access_token)
+                    primary_email=primary_email, emails=emails,
+                    github_token=access_token)
 
     user.put()
     login_user(user)
+
+
+def _get_email_addresses(gh_user):
+    """Retrieve a list of the user's verified email addresses and their primary
+    email address.
+
+    Args:
+        gh_user: GitHub AuthenticatedUser instance.
+
+    Returns:
+        tuple containing a list of the user's verified email addresses and
+        their primary email address.
+    """
+
+    emails = []
+    primary = None
+
+    for email_dict in gh_user.get_emails():
+        if not email_dict['verified']:
+            continue
+
+        if email_dict['primary']:
+            primary = email_dict['email']
+
+        emails.append(email_dict['email'])
+
+    return emails, primary
+
+
+def sync_github_user(user):
+    """Sync the given User with its GitHub account.
+
+    Args:
+        user: the User to sync.
+    """
+    from kaput import repository
+
+    logging.debug('Syncing %s' % user)
+
+    # Sync repos.
+    repository.sync_repos(user)
+
+    # Sync GitHub info.
+    gh_user = user.github_user
+    user.email = gh_user.email
+    user.username = gh_user.login
+
+    user.last_synced = datetime.utcnow()
+    user.put()
 

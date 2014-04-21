@@ -6,11 +6,13 @@ require.config({
         semantic: 'lib/semantic.min',
         handlebars: 'lib/handlebars-1.3.0',
         text: 'lib/text',
+        moment: 'lib/moment.min',
 
         BaseView: 'views/BaseView',
         HomeView: 'views/HomeView',
         DashboardView: 'views/DashboardView',
         Repository: 'models/Repository',
+        User: 'models/User',
     },
     shim: {
         backbone: {

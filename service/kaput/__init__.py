@@ -21,6 +21,7 @@ def create_app(config='kaput.settings'):
     # Imported to register urls
     from kaput.api import controller as api_controller
     from kaput.api import repository
+    from kaput.api import user
     from kaput.view import controller as views_controller
 
     app.register_blueprint(views_blueprint)

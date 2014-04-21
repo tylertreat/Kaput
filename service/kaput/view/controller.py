@@ -1,3 +1,4 @@
+import json
 import logging
 
 from flask import redirect
@@ -9,12 +10,14 @@ from flask.ext.login import logout_user
 from kaput import settings
 from kaput.auth import github
 from kaput.auth import user
+from kaput.utils import EntityEncoder
 from kaput.view.blueprint import blueprint
 
 
 @blueprint.route('/')
 def index():
-    return render_template('index.html', user=current_user)
+    u = current_user.to_dict() if current_user.is_authenticated() else None
+    return render_template('index.html', user=json.dumps(u, cls=EntityEncoder))
 
 
 @blueprint.route('/login')

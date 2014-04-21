@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import time
 
@@ -42,12 +43,25 @@ class SerializableMixin(object):
                     logging.warn('Cannot encode %s' % cls)
                     continue
                 if callable(attr):
-                    value[inc] = attr()
+                    output[inc] = attr()
                 else:
-                    value[inc] = attr
+                    output[inc] = attr
 
         if excludes:
             [output.pop(exc) for exc in excludes if exc in output]
 
         return output
+
+
+class EntityEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime.date):
+            return time.mktime(obj.utctimetuple())
+
+        elif isinstance(obj, ndb.Model):
+            return obj.to_dict()
+
+        else:
+            return json.JSONEncoder.default(self, obj)
 
