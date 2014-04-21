@@ -4,6 +4,7 @@ from google.appengine.api import memcache
 
 from github import Github
 from github.AuthenticatedUser import AuthenticatedUser
+from github.GithubException import GithubException
 from github.Repository import Repository
 
 
@@ -41,14 +42,22 @@ def create_webhook(repo, url):
         if it failed to be created.
     """
 
+    # TODO: this check is unneeded. GitHub returns an error if the hook exists.
     if get_webhook(repo, url):
         logging.debug('%s already has webhook %s' % (repo, url))
         return True
 
     gh_repo = repo.owner.get().get_github_repo(repo.name)
 
-    hook = gh_repo.create_hook('web', {'url': url, 'content_type': 'json'},
-                               events=['push'], active=True)
+    try:
+        hook = gh_repo.create_hook('web', {'url': url, 'content_type': 'json'},
+                                   events=['push'], active=True)
+    except GithubException, e:
+        if e.status == 422:
+            print '%s already has webhook %s' % (repo, url)
+            return True
+        else:
+            raise
 
     return hook is not None
 
