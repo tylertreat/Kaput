@@ -96,8 +96,8 @@ def sync_repos(user):
 
     logging.debug('Syncing Repositories for %s' % user)
     github_repos = user.github_repos
-    repo_keys = [ndb.Key(Repository, 'github_%s' % repo.id) for repo in
-                 github_repos]
+    repo_keys = [ndb.Key(User, user.key.id(), Repository, 'github_%s' %
+                         repo.id) for repo in github_repos]
     repos = ndb.get_multi(repo_keys)
 
     to_create = [github_repos[index]
