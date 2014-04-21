@@ -24,9 +24,8 @@ define([
             return this;
         },
 
-        close: function() {
-            this.reposView.remove();
-            this.remove();
+        beforeClose: function() {
+            this.reposView.close();
         }
     });
 
@@ -38,7 +37,6 @@ define([
 
         initialize: function() {
             var thisView = this;
-            this.repoViews = [];
             this.collection = new Repository.RepoCollection();
             this.collection.fetch({
                 reset: true,
@@ -54,8 +52,8 @@ define([
 
         render: function() {
             var thisView = this;
-            this.collection.each(function(repo) {
-                thisView.repoViews.push(new Dashboard.RepoView({model: repo}));
+            this.repoViews = _(this.collection.models).map(function(repo) {
+                return new Dashboard.RepoView({model: repo});
             }); 
             var lastSynced = Moment.unix(sessionUser.last_synced).fromNow();
             this.$el.empty();
@@ -68,6 +66,14 @@ define([
             return this;
         },
 
+        beforeClose: function() {
+            if (this.repoViews) {
+                _(this.repoViews).each(function(repoView) {
+                    repoView.close();
+                });
+            }
+        },
+
         syncRepos: function() {
             var thisView = this;
             this.$('.sync').addClass('loading');
@@ -76,6 +82,7 @@ define([
                 method: 'POST',
                 dataType: 'json',
                 success: function(user) {
+                    sessionUser = user;
                     var repos = user.repos;
                     thisView.collection = new Repository.RepoCollection(repos);
                     thisView.render();
