@@ -1,5 +1,5 @@
 <div>
-    <div class="ui menu">
+    <div class="ui menu large">
         <div class="item" style="font-weight:bold">Kaput.io</div>
         <a class="active item"><i class="code icon"></i> Repos</a>
         <div class="right menu">
@@ -17,5 +17,8 @@
 </div>
 
 <div id="dashboard">
-    <div id="repos"></div>
+    <div class="ui two column grid">
+        <div id="repos" class="column"></div>
+        <div class="column">Repo info goes here</div>
+    </div>
 </div>
