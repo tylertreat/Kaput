@@ -2,6 +2,7 @@ from datetime import datetime
 import unittest
 
 from gaeutils.test import DatastoreTestCase
+from gaeutils.test import MemcacheTestCase
 from mock import call
 from mock import Mock
 from mock import patch
@@ -229,11 +230,12 @@ class TestGetCommit(unittest.TestCase):
         self.assertEqual(mock_commit, actual)
 
 
+@patch('kaput.repository.memcache.set')
 @patch('kaput.repository.Repository')
 @patch('kaput.repository.ndb')
 class TestSyncRepos(unittest.TestCase):
 
-    def test_sync(self, mock_ndb, mock_repo):
+    def test_sync(self, mock_ndb, mock_repo, mock_set):
         """Ensure that a Repository entity is created for every GitHub repo
         that doesn't already have an entity and a list of the user's repos is
         returned.
@@ -256,7 +258,8 @@ class TestSyncRepos(unittest.TestCase):
         actual = repository.sync_repos(mock_user)
 
         self.assertEqual([repo1, mock_repo.return_value], actual)
-        expected = [call(repository.Repository, 'github_%s' % repo.id)
+        expected = [call(User, mock_user.key.id(), repository.Repository,
+                         'github_%s' % repo.id)
                     for repo in [repo1, repo2]]
         self.assertEqual(expected, mock_ndb.Key.call_args_list)
         mock_ndb.get_multi.assert_called_once_with(keys)
@@ -265,6 +268,9 @@ class TestSyncRepos(unittest.TestCase):
                                           description=repo2.description,
                                           name=repo2.name, owner=mock_user.key)
         mock_ndb.put_multi.assert_called_once_with([mock_repo.return_value])
+        mock_set.assert_called_once_with(
+            'kaput:repos:%s' % mock_user.key.id(),
+            [repo1, mock_repo.return_value])
 
 
 class TestEnableRepo(DatastoreTestCase):
@@ -304,7 +310,8 @@ class TestRepository(unittest.TestCase):
     def setUp(self):
         self.name = 'foo'
         self.description = 'foo bar baz'
-        self.owner = User(username='user', email='email', github_token='token')
+        self.owner = User(username='user', emails=['email'],
+                          primary_email='email', github_token='token')
         self.repo = repository.Repository(name=self.name,
                                           description=self.description,
                                           owner=self.owner.key)
