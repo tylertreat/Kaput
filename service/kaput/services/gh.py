@@ -8,27 +8,24 @@ from github.GithubException import GithubException
 from github.Repository import Repository
 
 
-def get_webhook(repo, url):
-    """Retrieve the GitHub webhook with the given url from the repo.
+def get_webhooks(repo, urls):
+    """Retrieve the GitHub webhooks with the given urls from the repo.
 
     Args:
-        repo: the Repository to get the webhook for.
-        url: the url of the webhook.
+        repo: the Repository to get the webhooks for.
+        urls: the urls of the webhooks.
 
     Returns:
-        Hook instance or None if the hook doesn't exist.
+        list of Hook instances.
     """
 
     gh_repo = repo.owner.get().get_github_repo(repo.name)
 
-    for hook in gh_repo.get_hooks():
-        if hook.config.get('url') == url:
-            return hook
-
-    return None
+    return [hook for hook in gh_repo.get_hooks()
+            if hook.config.get('url') in urls]
 
 
-def create_webhook(repo, url):
+def create_webhook(repo, url, events=None):
     """Create a GitHub webhook for the given Repository. This is intended to be
     idempotent, meaning it will check to see if the hook already exists before
     creating it.
@@ -36,22 +33,21 @@ def create_webhook(repo, url):
     Args:
         repo: the Repository to create the webhook for.
         url: the webhook url.
+        events: list of webhook events.
 
     Returns:
         True if the webhook was successfully created or already exists, False
         if it failed to be created.
     """
 
-    # TODO: this check is unneeded. GitHub returns an error if the hook exists.
-    if get_webhook(repo, url):
-        logging.debug('%s already has webhook %s' % (repo, url))
-        return True
+    if not events:
+        events = ['push']
 
     gh_repo = repo.owner.get().get_github_repo(repo.name)
 
     try:
         hook = gh_repo.create_hook('web', {'url': url, 'content_type': 'json'},
-                                   events=['push'], active=True)
+                                   events=events, active=True)
     except GithubException, e:
         if e.status == 422:
             print '%s already has webhook %s' % (repo, url)
@@ -73,11 +69,11 @@ def delete_webhook(repo, url):
         True if the hook was deleted, False if nothing was deleted.
     """
 
-    hook = get_webhook(repo, url)
+    hooks = get_webhooks(repo, (url,))
 
-    if hook:
+    if hooks:
         logging.debug('Deleting webhook %s for %s' % (url, repo))
-        hook.delete()
+        hooks[0].delete()
         return True
 
     return False

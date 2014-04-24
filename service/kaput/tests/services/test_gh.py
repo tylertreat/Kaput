@@ -25,9 +25,9 @@ class TestGetWebhook(unittest.TestCase):
         mock_owner_key.get.return_value = mock_owner
         repo.owner = mock_owner_key
 
-        actual = gh.get_webhook(repo, url)
+        actual = gh.get_webhooks(repo, [url])
 
-        self.assertEqual(hook1, actual)
+        self.assertEqual([hook1], actual)
         mock_repo.get_hooks.assert_called_once_with()
 
     def test_hook_does_not_exist(self):
@@ -47,13 +47,12 @@ class TestGetWebhook(unittest.TestCase):
         mock_owner_key.get.return_value = mock_owner
         repo.owner = mock_owner_key
 
-        actual = gh.get_webhook(repo, url)
+        actual = gh.get_webhooks(repo, [url])
 
-        self.assertIsNone(actual)
+        self.assertEqual([], actual)
         mock_repo.get_hooks.assert_called_once_with()
 
 
-@patch('kaput.services.gh.get_webhook')
 class TestCreateWebhook(unittest.TestCase):
 
     def setUp(self):
@@ -65,34 +64,33 @@ class TestCreateWebhook(unittest.TestCase):
         mock_owner_key.get.return_value = mock_owner
         self.repo.owner = mock_owner_key
 
-    def test_has_hook(self, mock_get_hook):
+    def test_has_hook(self):
         """Ensure that True is returned if the hook already exists."""
 
         url = 'url'
 
         self.assertTrue(gh.create_webhook(self.repo, url))
-        mock_get_hook.assert_called_once_with(self.repo, url)
 
-    def test_create(self, mock_get_hook):
+    def test_create(self):
         """Ensure that True is returned and the hook is created if it doesn't
         exist.
         """
+        from github.GithubException import GithubException
 
         url = 'url'
-        mock_get_hook.return_value = None
+        self.mock_repo.create_hook.side_effect = GithubException(422, 'snap')
 
         self.assertTrue(gh.create_webhook(self.repo, url))
-        mock_get_hook.assert_called_once_with(self.repo, url)
         self.mock_repo.create_hook.assert_called_once_with(
             'web', {'url': url, 'content_type': 'json'}, events=['push'],
             active=True
         )
 
 
-@patch('kaput.services.gh.get_webhook')
+@patch('kaput.services.gh.get_webhooks')
 class TestDeleteWebHook(unittest.TestCase):
 
-    def test_has_hook(self, mock_get_hook):
+    def test_has_hook(self, mock_get_hooks):
         """Ensure that if the hook exists, it's deleted and True is returned.
         """
 
@@ -100,18 +98,18 @@ class TestDeleteWebHook(unittest.TestCase):
         url = 'url'
 
         self.assertTrue(gh.delete_webhook(repo, url))
-        mock_get_hook.assert_called_once_with(repo, url)
-        mock_get_hook.return_value.delete.assert_called_once_with()
+        mock_get_hooks.assert_called_once_with(repo, (url,))
+        mock_get_hooks.return_value[0].delete.assert_called_once_with()
 
-    def test_no_hook(self, mock_get_hook):
+    def test_no_hook(self, mock_get_hooks):
         """Ensure that if the hook doesn't exist, nothing is done and False is
         returned.
         """
 
         repo = Mock()
         url = 'url'
-        mock_get_hook.return_value = None
+        mock_get_hooks.return_value = None
 
         self.assertFalse(gh.delete_webhook(repo, url))
-        mock_get_hook.assert_called_once_with(repo, url)
+        mock_get_hooks.assert_called_once_with(repo, (url,))
 

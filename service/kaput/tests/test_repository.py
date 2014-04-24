@@ -2,7 +2,6 @@ from datetime import datetime
 import unittest
 
 from gaeutils.test import DatastoreTestCase
-from gaeutils.test import MemcacheTestCase
 from mock import call
 from mock import Mock
 from mock import patch
@@ -287,7 +286,7 @@ class TestEnableRepo(DatastoreTestCase):
 
         self.assertTrue(mock_repo.enabled)
         mock_repo.put.assert_called_once_with()
-        mock_repo.create_webhook.assert_called_once_with()
+        mock_repo.create_webhooks.assert_called_once_with()
 
     def test_disable(self):
         """Ensure that when a Repository is disabled, the entity is updated and
@@ -301,7 +300,7 @@ class TestEnableRepo(DatastoreTestCase):
 
         self.assertFalse(mock_repo.enabled)
         mock_repo.put.assert_called_once_with()
-        mock_repo.delete_webhook.assert_called_once_with()
+        mock_repo.delete_webhooks.assert_called_once_with()
 
 
 @patch('kaput.repository.settings')
@@ -316,36 +315,42 @@ class TestRepository(unittest.TestCase):
                                           description=self.description,
                                           owner=self.owner.key)
 
-    @patch('kaput.repository.gh.get_webhook')
-    def test_get_webhook(self, mock_get_hook, mock_settings):
-        """Ensure that the Kaput webhook is returned."""
+    @patch('kaput.repository.gh.get_webhooks')
+    def test_get_webhooks(self, mock_get_hooks, mock_settings):
+        """Ensure that the Kaput webhooks are returned."""
 
-        mock_settings.KAPUT_WEBHOOK_URI = 'http://localhost:8080/foo'
+        mock_settings.PUSH_WEBHOOK_URI = 'http://localhost:8080/push'
+        mock_settings.RELEASE_WEBHOOK_URI = 'http://localhost:8080/release'
 
-        actual = self.repo.get_webhook()
+        actual = self.repo.get_webhooks()
 
-        self.assertEqual(mock_get_hook.return_value, actual)
+        self.assertEqual(mock_get_hooks.return_value, actual)
 
     @patch('kaput.repository.gh.create_webhook')
-    def test_create_webhook(self, mock_create_hook, mock_settings):
+    def test_create_webhooks(self, mock_create_hook, mock_settings):
         """Ensure that the Kaput webhook is created."""
 
-        mock_settings.KAPUT_WEBHOOK_URI = 'http://localhost:8080/foo'
+        mock_settings.PUSH_WEBHOOK_URI = 'http://localhost:8080/push'
+        mock_settings.RELEASE_WEBHOOK_URI = 'http://localhost:8080/release'
 
-        actual = self.repo.create_webhook()
+        actual = self.repo.create_webhooks()
 
         self.assertTrue(actual)
-        mock_create_hook.assert_called_once_with(
-            self.repo, mock_settings.KAPUT_WEBHOOK_URI)
+        expected = [call(self.repo, mock_settings.PUSH_WEBHOOK_URI),
+                    call(self.repo, mock_settings.RELEASE_WEBHOOK_URI,
+                         events=['release'])]
+        self.assertEqual(expected, mock_create_hook.call_args_list)
 
     @patch('kaput.repository.gh.delete_webhook')
     def test_delete_webhook(self, mock_delete_hook, mock_settings):
-        """Ensure that the Kaput webhook is deleted."""
+        """Ensure that the Kaput webhooks are deleted."""
 
-        mock_settings.KAPUT_WEBHOOK_URI = 'http://localhost:8080/foo'
+        mock_settings.PUSH_WEBHOOK_URI = 'http://localhost:8080/push'
+        mock_settings.RELEASE_WEBHOOK_URI = 'http://localhost:8080/release'
 
-        self.repo.delete_webhook()
+        self.repo.delete_webhooks()
 
-        mock_delete_hook.assert_called_once_with(
-            self.repo, mock_settings.KAPUT_WEBHOOK_URI)
+        expected = [call(self.repo, mock_settings.PUSH_WEBHOOK_URI),
+                    call(self.repo, mock_settings.RELEASE_WEBHOOK_URI)]
+        self.assertEqual(expected, mock_delete_hook.call_args_list)
 

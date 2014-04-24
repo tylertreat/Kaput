@@ -14,3 +14,4 @@ webob
 itsdangerous
 git+git://github.com/tylertreat/furious.git#egg=furious
 PyGithub
+ipaddress

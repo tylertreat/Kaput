@@ -31,31 +31,35 @@ class Repository(ndb.Model, SerializableMixin):
     def to_dict(self):
         return super(Repository, self).to_dict_(excludes=('key',))
 
-    def get_webhook(self):
-        """Get the Kaput GitHub webhook for this repository.
+    def get_webhooks(self):
+        """Get the Kaput GitHub webhooks for this repository.
 
         Returns:
-            Hook instance or None if the hook doesn't exist.
+            list of Hook instances.
         """
 
-        return gh.get_webhook(self, settings.KAPUT_WEBHOOK_URI)
+        return gh.get_webhooks(self, (settings.PUSH_WEBHOOK_URI,
+                                      settings.RELEASE_WEBHOOK_URI))
 
-    def create_webhook(self):
-        """Create a GitHub webhook for this repository. This is intended to be
-        idempotent, meaning it will check to see if the hook already exists
-        before creating it.
+    def create_webhooks(self):
+        """Create GitHub webhooks for this repository. This is intended to be
+        idempotent, meaning it will check to see if the hooks already exist
+        before creating them.
 
         Returns:
-            True if the webhook was successfully created or already exists,
-            False if it failed to be created.
+            True if the webhooks were successfully created or already exist,
+            False if they failed to be created.
         """
 
-        return gh.create_webhook(self, settings.KAPUT_WEBHOOK_URI)
+        return gh.create_webhook(self, settings.PUSH_WEBHOOK_URI) and \
+            gh.create_webhook(self, settings.RELEASE_WEBHOOK_URI,
+                              events=['release'])
 
-    def delete_webhook(self):
-        """Delete the GitHub webhook for this repository."""
+    def delete_webhooks(self):
+        """Delete the GitHub webhooks for this repository."""
 
-        gh.delete_webhook(self, settings.KAPUT_WEBHOOK_URI)
+        gh.delete_webhook(self, settings.PUSH_WEBHOOK_URI)
+        gh.delete_webhook(self, settings.RELEASE_WEBHOOK_URI)
 
 
 class Commit(ndb.Model):
@@ -133,9 +137,9 @@ def enable_repo(repo, enabled):
     repo.put()
 
     if enabled:
-        repo.create_webhook()
+        repo.create_webhooks()
     else:
-        repo.delete_webhook()
+        repo.delete_webhooks()
 
 
 def process_repo_push(repo, owner, push_data):

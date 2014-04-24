@@ -1,5 +1,8 @@
+import ipaddress
 import json
 import logging
+
+from google.appengine.api import urlfetch
 
 from flask import request
 
@@ -8,6 +11,9 @@ from kaput.api.blueprint import blueprint
 from kaput.report import process_exception
 from kaput.repository import process_repo_push
 from kaput.repository import Repository
+
+
+GITHUB_META_ENDPOINT = 'https://api.github.com/meta'
 
 
 @blueprint.route('/v1/exception', methods=['POST'])
@@ -21,9 +27,11 @@ def handle_exception():
     return 'Processing exception', 200
 
 
-@blueprint.route(settings.KAPUT_WEBHOOK_ENDPOINT, methods=['POST'])
-def process_git_push():
-    # TODO: Verify request origin.
+@blueprint.route(settings.PUSH_WEBHOOK_ENDPOINT, methods=['POST'])
+def process_github_push():
+    if not _verify_webhook_origin(request.remote_addr):
+        return '', 403
+
     push_data = json.loads(request.data)
 
     repo_id = push_data['repository']['id']
@@ -46,4 +54,39 @@ def process_git_push():
     process_repo_push(repo, owner, push_data)
 
     return 'Processing github_%s' % repo_id, 200
+
+
+@blueprint.route(settings.RELEASE_WEBHOOK_ENDPOINT, methods=['POST'])
+def process_github_release():
+    if not _verify_webhook_origin(request.remote_addr):
+        return '', 403
+
+    release_data = json.loads(request.data)
+
+    return '', 200
+
+
+def _verify_webhook_origin(origin_ip):
+    """Verify that the given IP address is a valid GitHub webhook origin.
+
+    Args:
+        origin_ip: IP address to verify
+
+    Returns:
+        True if the origin is valid, False if not.
+    """
+
+    result = urlfetch.fetch(GITHUB_META_ENDPOINT)
+
+    if result.status_code != 200:
+        raise Exception('Failed to retrieve GitHub origins')
+
+    hook_origins = json.loads(result.content)['hooks']
+
+    for valid_origin in hook_origins:
+        ip = ipaddress.ip_address(u'%s' % origin_ip)
+        if ipaddress.ip_address(ip) in ipaddress.ip_network(valid_origin):
+            return True
+
+    return False
 
