@@ -216,7 +216,7 @@ def process_release(repo_id, release_data):
 
 
 def _tag_commits(repo, release):
-    query = Commit.query(Commit.repo==repo.key, Commit.release==None)
+    query = Commit.query(Commit.repo == repo.key, Commit.release == None)
 
     with context.new() as ctx:
         # Associate past commits with the release.
@@ -227,14 +227,14 @@ def _tag_commits(repo, release):
 
             for keys in chunk(commit_keys, 10):
                 logging.debug('Inserting task to tag commit release')
-                ctx.add(target=tag_release,
+                ctx.add(target=tag_commit,
                         args=(release.key.id(), [key.id() for key in keys]))
 
             if not more:
                 break
 
 
-def tag_release(release_id, commit_ids):
+def tag_commit(release_id, commit_ids):
     release = Release.get_by_id(release_id)
     commits = ndb.get_multi(
         [ndb.Key(Commit, commit_id) for commit_id in commit_ids])

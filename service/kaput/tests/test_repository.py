@@ -411,10 +411,8 @@ class TestProcessRelease(unittest.TestCase):
 
     @patch('kaput.repository._tag_commits')
     @patch('kaput.repository.Release')
-    def test_fan_out(self, mock_release, mock_tag, mock_get):
-        """Ensure that a Release entity is created and saved and that tasks
-        are inserted for tagging commits with the release.
-        """
+    def test_create_release(self, mock_release, mock_tag, mock_get):
+        """Ensure that a Release entity is created and saved."""
 
         mock_repo = Mock()
         mock_get.return_value = mock_repo
@@ -436,4 +434,38 @@ class TestProcessRelease(unittest.TestCase):
             url=self.release_data['html_url'])
         mock_release.return_value.put.assert_called_once_with()
         mock_tag.assert_called_once_with(mock_repo, mock_release.return_value)
+
+
+@patch('kaput.repository.Commit')
+@patch('kaput.repository.context')
+class TestTagCommits(unittest.TestCase):
+
+    def test_fan_out(self, mock_context, mock_commit):
+        """Ensure that tasks are inserted for each Commit that does not have a
+        Release associated with it.
+        """
+
+        query = Mock()
+        key1 = Mock()
+        key2 = Mock()
+        query.fetch_page.return_value = ([key1, key2], None, False)
+        mock_commit.query.return_value = query
+        context = Mock()
+        mock_context.new.return_value.__enter__.return_value = context
+
+        repo = Mock()
+        release = Mock()
+
+        repository._tag_commits(repo, release)
+
+        mock_commit.query.assert_called_once_with(
+            repository.Commit.repo == repo.key,
+            repository.Commit.release == None)
+        mock_context.new.assert_called_once_with()
+        query.fetch_page.assert_called_once_with(500, start_cursor=None,
+                                                 keys_only=True)
+        context.add.assert_called_once_with(
+            target=repository.tag_commit,
+            args=(release.key.id(), [key1.id(), key2.id()])
+        )
 
