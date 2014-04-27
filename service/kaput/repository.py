@@ -12,6 +12,7 @@ from github import Github
 from kaput import settings
 from kaput.auth.user import User
 from kaput.services import gh
+from kaput.utils import chunk
 from kaput.utils import SerializableMixin
 
 
@@ -323,23 +324,4 @@ def _parse_hunks(commit, commit_file):
                                 timestamp=commit.author_date))
 
     return hunks
-
-
-def chunk(the_list, chunk_size):
-    """Chunks the given list into lists of size chunk_size.
-
-    Args:
-        the_list: the list to chunk into sublists.
-        chunk_size: the size to chunk the list by.
-
-    Returns:
-        generator that yields the chunked sublists.
-    """
-
-    if not the_list or chunk_size <= 0:
-        yield []
-        return
-
-    for i in xrange(0, len(the_list), chunk_size):
-        yield the_list[i:i + chunk_size]
 
