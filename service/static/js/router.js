@@ -17,7 +17,7 @@ define([
         },
 
         index: function() {
-            if (sessionUser && sessionUser.is_authenticated) {
+            if (sessionData && sessionData.is_authenticated) {
                 this.dashboard();
             } else {
                 this.showView('#container', new HomeView());
@@ -25,7 +25,7 @@ define([
         },
 
         dashboard: function() {
-            if (sessionUser && sessionUser.is_authenticated) {
+            if (sessionData && sessionData.is_authenticated) {
                 this.showView('#container', new DashboardView.DashboardView({
                     dispatcher: this.dispatcher
                 }));

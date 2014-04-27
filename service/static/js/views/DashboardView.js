@@ -6,96 +6,81 @@ define([
   'templates',
   'BaseView',
   'Repository',
-], function($, _, Backbone, Moment, Templates, BaseView, Repository) {
+  'User',
+], function($, _, Backbone, Moment, Templates, BaseView, Repository, User) {
     "use strict";
 
     var Dashboard = {};
 
     Dashboard.DashboardView = BaseView.extend({
         template: Templates.Dashboard.dashboard(),
+        events: {
+            'change .repo-select': 'changeActiveRepo',
+            'click .sync': 'sync',
+        },
 
         initialize: function(options) {
+            var thisView = this;
             this.dispatcher = options.dispatcher;
-            this.reposView = new Dashboard.ReposView({
-                dispatcher: this.dispatcher
-            });
-
+            this.sessionUser = new User.UserModel(sessionData);
+            this.collection = new Repository.RepoCollection();
             this.dispatcher.on('repo:selected', this.showRepo, this);
         },
 
         render: function() {
-            this.$el.html(this.template({user: sessionUser}));
-            this.assign(this.reposView, '#repos');
-            return this;
-        },
-
-        beforeClose: function() {
-            this.reposView.close();
-            if (this.repoDetailsView) {
-                this.repoDetailsView.close();
-            }
-        },
-
-        showRepo: function(repo) {
-            this.repoDetailsView = new Dashboard.RepoDetailsView({model: repo});
-            this.assign(this.repoDetailsView, '#repo-details');
-        },
-    });
-
-    Dashboard.ReposView = BaseView.extend({
-        template: Templates.Dashboard.repos(),
-        events: {
-            'click .sync': 'syncRepos',
-        },
-
-        initialize: function(options) {
-            this.dispatcher = options.dispatcher;
             var thisView = this;
-            this.collection = new Repository.RepoCollection();
             this.collection.fetch({
                 reset: true,
                 success: function(collection) {
                     if (collection.length === 0) {
-                        thisView.syncRepos();
+                        thisView.sync();
                     } else {
-                        thisView.render();
+                        thisView._render();
                     }
                 },
             });
+            return this;
         },
 
-        render: function() {
-            var thisView = this;
-            this.repoViews = _(this.collection.models).map(function(repo) {
-                return new Dashboard.RepoView({
-                    model: repo,
-                    dispatcher: thisView.dispatcher,
-                });
-            }); 
-            var lastSynced = Moment.unix(sessionUser.last_synced).fromNow();
-            this.$el.empty();
-            this.$el.html(this.template({lastSynced: lastSynced}));
-
-            _(this.repoViews).each(function(repoView) {
-                thisView.$('.repos').append(repoView.render().el);
-            });
-
-            if (this.repoViews.length > 0) {
-                this.repoViews[0].selectRepo();
-            }
-
+        _render: function() {
+            var lastSynced = Moment.unix(this.sessionUser.get('last_synced')).fromNow();
+            this.$el.html(this.template({
+                user: this.sessionUser.toJSON(),
+                repos: this.collection.toJSON(),
+                lastSynced: lastSynced,
+            }));
+            var activeRepoId = this.sessionUser.get('active_repo');
+            this.$('.repo-select').val(activeRepoId);
+            this.$('.repo-select').chosen();
+            this.selectRepo(activeRepoId);
             return this;
         },
 
         beforeClose: function() {
-            if (this.repoViews) {
-                _(this.repoViews).each(function(repoView) {
-                    repoView.close();
-                });
+            if (this.repoView) {
+                this.repoView.close();
             }
         },
 
-        syncRepos: function() {
+        // Change the user's active repo. This is the repo that will be shown on
+        // page load. Also display it in the dashboard.
+        changeActiveRepo: function(e) {
+            var repoId = $(e.target).val();
+            this.sessionUser.save({'active_repo': repoId});
+            this.selectRepo(repoId);
+        },
+
+        // Display the selected repo in the dashboard.
+        selectRepo: function(repoId) {
+            var repo = this.collection.findWhere({id: repoId});
+            if (this.repoView) {
+                this.repoView.undelegateEvents();
+            }
+            this.repoView = new Dashboard.RepoView({model: repo});
+            this.assign(this.repoView, '#dashboard');
+        },
+
+        sync: function() {
             var thisView = this;
             this.$('.sync').addClass('loading');
             $.ajax({
@@ -103,7 +88,8 @@ define([
                 method: 'POST',
                 dataType: 'json',
                 success: function(user) {
-                    sessionUser = user;
+                    sessionData = user;
+                    thisView.sessionUser = new User.UserModel(sessionData);
                     var repos = user.repos;
                     thisView.collection = new Repository.RepoCollection(repos);
                     thisView.render();
@@ -116,31 +102,24 @@ define([
     });
 
     Dashboard.RepoView = BaseView.extend({
-        template: Templates.Dashboard.repoListItem(),
+        template: Templates.Dashboard.repoDetails(),
         events: {
             'click .enable': 'toggleRepo',
-            'click': 'selectRepo',
-        },
-
-        initialize: function(options) {
-            this.dispatcher = options.dispatcher;
         },
 
         render: function() {
-            var html = this.template({repo: this.model.toJSON()});
-            var $repo = $(html);
-            this.$el.replaceWith($repo);
-            this.setElement($repo);
+            this.$el.html(this.template({repo: this.model.toJSON()}));
             return this;
         },
 
         toggleRepo: function() {
             var thisView = this;
             var enabled = !this.model.get('enabled');
-            this.toggleEnabledButton(enabled);
-            this.model.save({'enabled': enabled}, {
+            this.model.set('enabled', enabled);
+            this.render();
+            this.model.save(null, {
                 error: function() {
-                    thisView.toggleEnabledButton(!enabled);
+                    thisView.render();
                 }
             });
         },
@@ -149,25 +128,11 @@ define([
             var $toggle = this.$('.enable');
             if (enabled) {
                 $toggle.addClass('active');
+                $toggle.html('Enabled');
             } else {
                 $toggle.removeClass('active');
+                $toggle.html('Disabled');
             }
-        },
-
-        selectRepo: function() {
-            this.$el.siblings('.item').removeClass('active');
-            this.$el.addClass('active');
-            this.dispatcher.trigger('repo:selected', this.model);
-        },
-
-    });
-
-    Dashboard.RepoDetailsView = BaseView.extend({
-        template: Templates.Dashboard.repoDetails(),
-
-        render: function() {
-            this.$el.html(this.template({repo: this.model.toJSON()}));
-            return this;
         },
 
     });

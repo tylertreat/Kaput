@@ -7,6 +7,7 @@ require.config({
         handlebars: 'lib/handlebars-1.3.0',
         text: 'lib/text',
         moment: 'lib/moment.min',
+        chosen: 'lib/chosen.jquery.min',
 
         BaseView: 'views/BaseView',
         HomeView: 'views/HomeView',
@@ -29,13 +30,18 @@ require.config({
         handlebars: {
             exports: 'Handlebars'
         },
+        chosen: {
+            deps: ['jquery'],
+            exports: 'Chosen'
+        },
     }
 });
 
 require([
     'router',
     'semantic',
-], function(Router, Semantic) {
+    'chosen',
+], function(Router, Semantic, Chosen) {
     Router.initialize();
 
     $('.ui.dropdown').dropdown();

@@ -25,6 +25,7 @@ class User(ndb.Model, UserMixin, SerializableMixin):
     emails = ndb.StringProperty(repeated=True)
     github_token = ndb.StringProperty()
     last_synced = ndb.DateTimeProperty(required=False, indexed=False)
+    active_repo = ndb.KeyProperty(kind='Repository', required=False)
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -33,6 +34,14 @@ class User(ndb.Model, UserMixin, SerializableMixin):
         return super(User, self).to_dict_(
             excludes=('github_token', 'key'),
             includes=('is_authenticated', 'repos'))
+
+    def update(self, data):
+        self.username = data.get('username', self.username)
+        self.primary_email = data.get('primary_email', self.primary_email)
+        self.emails = data.get('emails', self.emails)
+        repo_id = data.get('active_repo')
+        if repo_id:
+            self.active_repo = ndb.Key('Repository', repo_id)
 
     def get_id(self):
         return self.key.id()
