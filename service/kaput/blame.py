@@ -23,7 +23,7 @@ def blame(repo, filename, line_number):
     if not hunk:
         return None, None, None
 
-    commit = hunk.key.parent().get()
+    commit = hunk.commit.get()
 
     author_key = commit.author
 

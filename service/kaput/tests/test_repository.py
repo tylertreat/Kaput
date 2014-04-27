@@ -170,7 +170,7 @@ class TestProcessCommit(unittest.TestCase):
 
         repository.process_commit(repo_id, commit_id, user.key.id())
 
-        mock_get_repo.assert_called_once_with(repo_id, parent=user.key)
+        mock_get_repo.assert_called_once_with(repo_id)
         mock_get_commit.assert_called_once_with(repo.name, commit_id,
                                                 owner_token)
 
@@ -180,7 +180,7 @@ class TestProcessCommit(unittest.TestCase):
                          mock_get_user.call_args_list)
 
         mock_commit_init.assert_called_once_with(
-            id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
+            id=commit_id, repo=repo.key, sha=commit_id,
             author=user.key, author_name=mock_author.name,
             author_email=mock_author.email, author_date=mock_author.date,
             committer=user.key, committer_name=mock_committer.name,
@@ -190,10 +190,10 @@ class TestProcessCommit(unittest.TestCase):
         )
 
         mock_commit_init.return_value.put.assert_called_once_with()
-        expected = [call(parent=commit.key, commit=commit.key,
+        expected = [call(commit=commit.key,
                          filename='file1.py', lines=[1, 2, 3, 4],
                          timestamp=mock_author.date),
-                    call(parent=commit.key, commit=commit.key,
+                    call(commit=commit.key,
                          filename='file2.py', lines=[14, 15, 16],
                          timestamp=mock_author.date)]
         self.assertEqual(expected, mock_commit_hunk_init.call_args_list)
@@ -263,7 +263,6 @@ class TestSyncRepos(unittest.TestCase):
         self.assertEqual(expected, mock_ndb.Key.call_args_list)
         mock_ndb.get_multi.assert_called_once_with(keys)
         mock_repo.assert_called_once_with(id='github_%s' % repo2.id,
-                                          parent=mock_user.key,
                                           description=repo2.description,
                                           name=repo2.name, owner=mock_user.key)
         mock_ndb.put_multi.assert_called_once_with([mock_repo.return_value])

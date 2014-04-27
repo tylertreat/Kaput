@@ -50,7 +50,7 @@ def create_webhook(repo, url, events=None):
                                    events=events, active=True)
     except GithubException, e:
         if e.status == 422:
-            print '%s already has webhook %s' % (repo, url)
+            logging.debug('%s already has webhook %s' % (repo, url))
             return True
         else:
             raise

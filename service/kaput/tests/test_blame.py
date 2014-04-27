@@ -61,7 +61,7 @@ class TestBlame(unittest.TestCase):
         author = Mock()
         author_key.get.return_value = author
         commit.author = author_key
-        hunk_key.parent.return_value.get.return_value = commit
+        commit_hunk.commit.get.return_value = commit
 
         first_query.filter.return_value = second_query
         second_query.filter.return_value = third_query
@@ -103,7 +103,7 @@ class TestBlame(unittest.TestCase):
         commit.author_name = 'Bruce Lee'
         commit.author_email = 'bruce@lee.com'
         commit.author = None
-        hunk_key.parent.return_value.get.return_value = commit
+        commit_hunk.commit.get.return_value = commit
 
         first_query.filter.return_value = second_query
         second_query.filter.return_value = third_query

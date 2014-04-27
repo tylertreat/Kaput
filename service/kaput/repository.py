@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import re
 
@@ -76,6 +77,7 @@ class Commit(ndb.Model):
     committer_email = ndb.StringProperty(indexed=False)
     committer_date = ndb.DateTimeProperty(indexed=False)
     message = ndb.TextProperty(indexed=False, required=False)
+    release = ndb.KeyProperty(required=False)
 
 
 class CommitHunk(ndb.Model):
@@ -85,6 +87,19 @@ class CommitHunk(ndb.Model):
     filename = ndb.StringProperty()
     lines = ndb.IntegerProperty(repeated=True)
     timestamp = ndb.DateTimeProperty()
+
+
+class Release(ndb.Model):
+    """Git repository release."""
+
+    repo = ndb.KeyProperty(kind=Repository)
+    tag_name = ndb.StringProperty(indexed=False)
+    name = ndb.StringProperty(indexed=False)
+    description = ndb.TextProperty(indexed=False)
+    prerelease = ndb.BooleanProperty(indexed=False)
+    created = ndb.DateTimeProperty(indexed=False)
+    published = ndb.DateTimeProperty(indexed=False)
+    url = ndb.StringProperty(indexed=False)
 
 
 def sync_repos(user):
@@ -107,9 +122,8 @@ def sync_repos(user):
     to_create = [github_repos[index]
                  for index, repo in enumerate(repos) if not repo]
 
-    to_create = [Repository(id='github_%s' % repo.id, parent=user.key,
-                            name=repo.name, description=repo.description,
-                            owner=user.key)
+    to_create = [Repository(id='github_%s' % repo.id, name=repo.name,
+                            description=repo.description, owner=user.key)
                  for repo in to_create]
 
     logging.debug('Creating %d Repositories' % len(to_create))
@@ -121,7 +135,6 @@ def sync_repos(user):
     return repos
 
 
-@ndb.transactional
 def enable_repo(repo, enabled):
     """Update the given repo by enabling/disabling it. This will not only
     update the Repo model, but also create or delete the GitHub webhook on the
@@ -165,6 +178,70 @@ def process_repo_push(repo, owner, push_data):
     logging.debug('Inserted %d fan-out tasks' % ctx.insert_success)
 
 
+def process_release(repo_id, release_data):
+    """Process a newly created repo release.
+
+    Args:
+        repo_id: the id of the repo the release belongs to.
+        release_data: dict containing release data.
+
+    Returns:
+        the created Release entity.
+    """
+
+    repo = Repository.get_by_id('github_%s' % repo_id)
+
+    if not repo:
+        raise Exception('Repo with id github_%s does not exist' % repo_id)
+
+    created = datetime.strptime(release_data['created_at'],
+                                '%Y-%m-%dT%H:%M:%SZ')
+    published = datetime.strptime(release_data['published_at'],
+                                  '%Y-%m-%dT%H:%M:%SZ')
+
+    release = Release(id='github_%s' % release_data['id'],
+                      tag_name=release_data['tag_name'],
+                      name=release_data['name'],
+                      description=release_data.get('body'),
+                      prerelease=release_data['prerelease'],
+                      created=created,
+                      published=published,
+                      url=release_data['html_url'])
+
+    release.put()
+    query = Commit.query(Commit.repo==repo.key, Commit.release==None)
+
+    with context.new() as ctx:
+        # Associate past commits with the release.
+        cursor = None
+        while True:
+            commit_keys, cursor, more = query.fetch_page(
+                500, start_cursor=cursor, keys_only=True)
+
+            for keys in chunk(commit_keys, 10):
+                logging.debug('Inserting task to tag commit release')
+                ctx.add(target=tag_release,
+                        args=(release.key.id(), [key.id() for key in keys]))
+
+            if not more:
+                break
+
+    return release
+
+
+def tag_release(release_id, commit_ids):
+    release = Release.get_by_id(release_id)
+    commits = ndb.get_multi(
+        [ndb.Key(Commit, commit_id) for commit_id in commit_ids])
+
+    for commit in commits:
+        commit.release = release.key
+
+    logging.debug('Tagging %s commits with release %s' % (len(commits),
+                                                          release))
+    ndb.put_multi(commits)
+
+
 @defaults(queue=COMMIT_QUEUE)
 def process_commit(repo_id, commit_id, owner_id):
     """Process a single commit that was made to a repo by collecting data for
@@ -177,7 +254,7 @@ def process_commit(repo_id, commit_id, owner_id):
     """
 
     owner = User.get_by_id(owner_id)
-    repo = Repository.get_by_id(repo_id, parent=owner.key)
+    repo = Repository.get_by_id(repo_id)
     gh_commit = _get_commit(repo.name, commit_id, owner.github_token)
     author = gh_commit.commit.author
     committer = gh_commit.commit.committer
@@ -186,12 +263,11 @@ def process_commit(repo_id, commit_id, owner_id):
     committer_user = User.get_by_id('github_%s' % gh_commit.committer.id)
 
     commit = Commit(
-        id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
-        author=author_user.key, author_name=author.name,
-        author_email=author.email, author_date=author.date,
-        committer=committer_user.key, committer_name=committer.name,
-        committer_email=committer.email, committer_date=committer.date,
-        message=gh_commit.commit.message)
+        id=commit_id, repo=repo.key, sha=commit_id, author=author_user.key,
+        author_name=author.name, author_email=author.email,
+        author_date=author.date, committer=committer_user.key,
+        committer_name=committer.name, committer_email=committer.email,
+        committer_date=committer.date, message=gh_commit.commit.message)
 
     logging.debug('Saving commit %s' % commit_id)
     commit.put()
@@ -236,10 +312,29 @@ def _parse_hunks(commit, commit_file):
 
         lines = range(int(start_line), int(start_line) + int(line_count))
 
-        hunks.append(CommitHunk(parent=commit.key, commit=commit.key,
+        hunks.append(CommitHunk(commit=commit.key,
                                 filename=commit_file.filename,
                                 lines=lines,
                                 timestamp=commit.author_date))
 
     return hunks
+
+
+def chunk(the_list, chunk_size):
+    """Chunks the given list into lists of size chunk_size.
+
+    Args:
+        the_list: the list to chunk into sublists.
+        chunk_size: the size to chunk the list by.
+
+    Returns:
+        generator that yields the chunked sublists.
+    """
+
+    if not the_list or chunk_size <= 0:
+        yield []
+        return
+
+    for i in xrange(0, len(the_list), chunk_size):
+        yield the_list[i:i + chunk_size]
 

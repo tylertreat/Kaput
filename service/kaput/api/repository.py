@@ -44,7 +44,7 @@ def update_repo():
     if not repo_id:
         return json.dumps({'message': 'Missing required id field'}), 400
 
-    repo = Repository.get_by_id(repo_id, parent=current_user.key)
+    repo = Repository.get_by_id(repo_id)
 
     if not repo:
         return json.dumps({'message': 'Repo %s does not exist' % repo_id}), 404

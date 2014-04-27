@@ -10,6 +10,7 @@ from kaput import settings
 from kaput.api.blueprint import blueprint
 from kaput.report import process_exception
 from kaput.repository import process_repo_push
+from kaput.repository import process_release
 from kaput.repository import Repository
 
 
@@ -62,6 +63,8 @@ def process_github_release():
         return '', 403
 
     release_data = json.loads(request.data)
+
+    process_release(release_data['repository']['id'], release_data['release'])
 
     return '', 200
 
