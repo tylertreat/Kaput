@@ -236,8 +236,8 @@ def _tag_commits(repo, release):
 
 def tag_commit(release_id, commit_ids):
     release = Release.get_by_id(release_id)
-    commits = ndb.get_multi(
-        [ndb.Key(Commit, commit_id) for commit_id in commit_ids])
+    commits = filter(None, ndb.get_multi(
+        [ndb.Key(Commit, commit_id) for commit_id in commit_ids]))
 
     for commit in commits:
         commit.release = release.key

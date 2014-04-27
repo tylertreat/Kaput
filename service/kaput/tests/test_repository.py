@@ -469,3 +469,38 @@ class TestTagCommits(unittest.TestCase):
             args=(release.key.id(), [key1.id(), key2.id()])
         )
 
+
+@patch('kaput.repository.ndb.Key')
+@patch('kaput.repository.ndb.put_multi')
+@patch('kaput.repository.ndb.get_multi')
+@patch('kaput.repository.Release.get_by_id')
+class TestTagCommit(unittest.TestCase):
+
+    def test_tag_commit(self, mock_get_by_id, mock_get_multi, mock_put_multi,
+                        mock_key):
+        """Ensure that the Commits are updated with the Release."""
+
+        mock_release = Mock()
+        mock_get_by_id.return_value = mock_release
+        key1 = Mock()
+        key2 = Mock()
+        key3 = Mock()
+        mock_key.side_effect = [key1, key2, key3]
+        commit1 = Mock()
+        commit2 = Mock()
+        mock_get_multi.return_value = [commit1, commit2, None]
+
+        release_id = '123'
+        commit_ids = ['foo', 'bar', 'baz']
+
+        repository.tag_commit(release_id, commit_ids)
+
+        mock_get_by_id.assert_called_once_with(release_id)
+        expected = [call(repository.Commit, commit_id)
+                    for commit_id in commit_ids]
+        self.assertEqual(expected, mock_key.call_args_list)
+        mock_get_multi.assert_called_once_with([key1, key2, key3])
+        mock_put_multi.assert_called_once_with([commit1, commit2])
+        self.assertEqual(mock_release.key, commit1.release)
+        self.assertEqual(mock_release.key, commit2.release)
+
