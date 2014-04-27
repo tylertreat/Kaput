@@ -200,6 +200,7 @@ def process_release(repo_id, release_data):
                                   '%Y-%m-%dT%H:%M:%SZ')
 
     release = Release(id='github_%s' % release_data['id'],
+                      parent=repo.key,
                       tag_name=release_data['tag_name'],
                       name=release_data['name'],
                       description=release_data.get('body'),
@@ -209,6 +210,12 @@ def process_release(repo_id, release_data):
                       url=release_data['html_url'])
 
     release.put()
+    _tag_commits(repo, release)
+
+    return release
+
+
+def _tag_commits(repo, release):
     query = Commit.query(Commit.repo==repo.key, Commit.release==None)
 
     with context.new() as ctx:
@@ -225,8 +232,6 @@ def process_release(repo_id, release_data):
 
             if not more:
                 break
-
-    return release
 
 
 def tag_release(release_id, commit_ids):

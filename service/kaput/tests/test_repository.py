@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import unittest
 
 from gaeutils.test import DatastoreTestCase
@@ -352,4 +353,87 @@ class TestRepository(unittest.TestCase):
         expected = [call(self.repo, mock_settings.PUSH_WEBHOOK_URI),
                     call(self.repo, mock_settings.RELEASE_WEBHOOK_URI)]
         self.assertEqual(expected, mock_delete_hook.call_args_list)
+
+
+@patch('kaput.repository.Repository.get_by_id')
+class TestProcessRelease(unittest.TestCase):
+
+    def setUp(self):
+        self.repo_id = 123
+        self.release_json = """{
+            "url": "url",
+            "assets_url": "assets url",
+            "upload_url": "upload url",
+            "html_url": "html url",
+            "id": 286074,
+            "tag_name": "v0.0.3",
+            "target_commitish": "master",
+            "name": "This is a test release",
+            "draft": false,
+            "author": {
+                "login": "tylertreat",
+                "id": 552817,
+                "avatar_url": "avatar url",
+                "gravatar_id": "dcbf01e42178cd9698fb3d4806e33d84",
+                "url": "https://api.github.com/users/tylertreat",
+                "html_url": "https://github.com/tylertreat",
+                "followers_url": "followers url",
+                "following_url": "following url",
+                "gists_url": "gists url",
+                "starred_url": "starred url",
+                "subscriptions_url": "subscriptions url",
+                "organizations_url": "organizations url",
+                "repos_url": "https://api.github.com/users/tylertreat/repos",
+                "events_url": "events url",
+                "received_events_url": "received events url",
+                "type": "User",
+                "site_admin": false
+            },
+            "prerelease": false,
+            "created_at": "2014-04-24T03:51:08Z",
+            "published_at": "2014-04-24T03:54:53Z",
+            "assets": [],
+            "tarball_url": "tarball url",
+            "zipball_url": "zipball url",
+            "body": ""
+        }"""
+        self.release_data = json.loads(self.release_json)
+
+    def test_no_repo(self, mock_get):
+        """Ensure that if the Repository doesn't exist, an exception is raised.
+        """
+
+        mock_get.return_value = None
+
+        self.assertRaises(Exception, repository.process_release, self.repo_id,
+                          self.release_data)
+        mock_get.assert_called_once_with('github_%s' % self.repo_id)
+
+    @patch('kaput.repository._tag_commits')
+    @patch('kaput.repository.Release')
+    def test_fan_out(self, mock_release, mock_tag, mock_get):
+        """Ensure that a Release entity is created and saved and that tasks
+        are inserted for tagging commits with the release.
+        """
+
+        mock_repo = Mock()
+        mock_get.return_value = mock_repo
+
+        actual = repository.process_release(self.repo_id, self.release_data)
+
+        self.assertEqual(mock_release.return_value, actual)
+        mock_release.assert_called_once_with(
+            id='github_%s' % self.release_data['id'],
+            parent=mock_repo.key,
+            tag_name=self.release_data['tag_name'],
+            name=self.release_data['name'],
+            description=self.release_data['body'],
+            prerelease=self.release_data['prerelease'],
+            created=datetime.strptime(self.release_data['created_at'],
+                                      '%Y-%m-%dT%H:%M:%SZ'),
+            published=datetime.strptime(self.release_data['published_at'],
+                                        '%Y-%m-%dT%H:%M:%SZ'),
+            url=self.release_data['html_url'])
+        mock_release.return_value.put.assert_called_once_with()
+        mock_tag.assert_called_once_with(mock_repo, mock_release.return_value)
 
