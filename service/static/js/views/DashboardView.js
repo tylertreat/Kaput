@@ -43,7 +43,12 @@ define([
         },
 
         _render: function() {
-            var lastSynced = Moment.unix(this.sessionUser.get('last_synced')).fromNow();
+            var lastSynced = this.sessionUser.get('last_synced');
+            if (!lastSynced) {
+                lastSynced = 'never';
+            } else {
+                lastSynced = Moment.unix(this.sessionUser.get('last_synced')).fromNow();
+            }
             this.$el.html(this.template({
                 user: this.sessionUser.toJSON(),
                 repos: this.collection.toJSON(),
