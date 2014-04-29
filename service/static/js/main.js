@@ -8,6 +8,7 @@ require.config({
         text: 'lib/text',
         moment: 'lib/moment.min',
         chosen: 'lib/chosen.jquery.min',
+        pace: 'lib/pace.min',
 
         BaseView: 'views/BaseView',
         HomeView: 'views/HomeView',
@@ -41,8 +42,10 @@ require([
     'router',
     'semantic',
     'chosen',
-], function(Router, Semantic, Chosen) {
+    'pace',
+], function(Router, Semantic, Chosen, Pace) {
     Router.initialize();
+    Pace.start({ajax: {trackMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']}});
 
     $('.ui.dropdown').dropdown();
 });
