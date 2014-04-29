@@ -49,10 +49,18 @@ define([
                 repos: this.collection.toJSON(),
                 lastSynced: lastSynced,
             }));
+
+            // Select the last active repo. If there isn't one, select the
+            // first in the list.
             var activeRepoId = this.sessionUser.get('active_repo');
+            if (!activeRepoId) {
+                activeRepoId = this.collection.first().get('id');
+            }
+
             this.$('.repo-select').val(activeRepoId);
             this.$('.repo-select').chosen();
             this.selectRepo(activeRepoId);
+
             return this;
         },
 
@@ -73,6 +81,11 @@ define([
         // Display the selected repo in the dashboard.
         selectRepo: function(repoId) {
             var repo = this.collection.findWhere({id: repoId});
+
+            if (!repo) {
+                return;
+            }
+
             if (this.repoView) {
                 this.repoView.undelegateEvents();
             }
