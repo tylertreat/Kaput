@@ -63,7 +63,7 @@ define([
             }
 
             this.$('.repo-select').val(activeRepoId);
-            this.$('.repo-select').chosen();
+            this.$('.repo-select').chosen({no_results_text: 'No repos match'});
             this.selectRepo(activeRepoId);
 
             return this;
