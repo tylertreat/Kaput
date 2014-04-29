@@ -1,7 +1,7 @@
 <div>
     <div class="ui menu large">
         <div class="item" style="font-weight:bold">Kaput.io</div>
-        <select class="item repo-select">
+        <select class="item repo-select" data-placeholder="Select a repo">
             {{#each repos}}
             <option value="{{ this.id }}">{{ this.name }}</option>
             {{/each}}

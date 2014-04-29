@@ -1,4 +1,4 @@
-<div>
+<div class="title">
     <div class="pull-left" style="margin-right:15px;margin-top:10px">
         {{#if repo.enabled}}
         <div class="ui toggle button active enable">Enabled</div>
