@@ -42,11 +42,9 @@ require([
     'router',
     'semantic',
     'chosen',
-    'pace',
-], function(Router, Semantic, Chosen, Pace) {
+], function(Router, Semantic, Chosen) {
     Router.initialize();
-    Pace.start({ajax: {trackMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']}});
-
+    
     $('.ui.dropdown').dropdown();
 });
 

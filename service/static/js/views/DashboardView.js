@@ -2,12 +2,13 @@ define([
   'jquery',
   'underscore',
   'backbone',
+  'pace',
   'moment',
   'templates',
   'BaseView',
   'Repository',
   'User',
-], function($, _, Backbone, Moment, Templates, BaseView, Repository, User) {
+], function($, _, Backbone, Pace, Moment, Templates, BaseView, Repository, User) {
     "use strict";
 
     var Dashboard = {};
@@ -20,6 +21,7 @@ define([
         },
 
         initialize: function(options) {
+            Pace.start({ajax: {trackMethods: ['GET', 'POST']}});
             var thisView = this;
             this.dispatcher = options.dispatcher;
             this.sessionUser = new User.UserModel(sessionData);
