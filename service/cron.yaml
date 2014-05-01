@@ -1,0 +1,4 @@
+cron:
+- description: user account sync
+  url: /_cron/sync
+  schedule: every 1 mins

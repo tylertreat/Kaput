@@ -6,3 +6,7 @@ queue:
 - name: notification-processor
   rate: 500/s
   bucket_size: 100
+
+- name: user-sync
+  rate: 500/s
+  bucket_size: 100

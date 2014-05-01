@@ -2,10 +2,13 @@ from datetime import datetime
 import logging
 
 from google.appengine.api import memcache
+from google.appengine.datastore.datastore_query import Cursor
 from google.appengine.ext import ndb
 
 from flask.ext.login import login_user
 from flask.ext.login import UserMixin
+from furious import context
+from furious.async import defaults
 from github import Github
 
 from kaput.services import gh
@@ -142,6 +145,44 @@ def _get_email_addresses(gh_user):
         emails.append(email_dict['email'])
 
     return emails, primary
+
+
+@defaults(queue='user-sync')
+def sync_users(cursor=None):
+    """Insert tasks to sync Users with GitHub.
+
+    Args:
+        cursor: urlsafe cursor to begin fetching users at.
+    """
+
+    query = User.query()
+    if cursor:
+        cursor = Cursor(urlsafe=cursor)
+
+    keys, cursor, more = query.fetch_page(100, start_cursor=cursor,
+                                          keys_only=True)
+
+    with context.new() as ctx:
+        logging.debug('Inserting task to sync %s user accounts' % len(keys))
+        ctx.add(target=_sync_users, args=([key.id() for key in keys],))
+
+        if more:
+            ctx.add(target=sync_users, kwargs={'cursor': cursor.urlsafe()})
+
+
+@defaults(queue='user-sync')
+def _sync_users(user_ids):
+    """Sync Users with GitHub.
+
+    Args:
+        user_ids: list of ids for users to sync.
+    """
+
+    keys = [ndb.Key(User, user_id) for user_id in user_ids]
+    users = filter(None, ndb.get_multi(keys))
+
+    for user in users:
+        sync_github_user(user)
 
 
 def sync_github_user(user):

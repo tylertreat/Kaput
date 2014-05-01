@@ -217,7 +217,7 @@ def process_release(repo_id, release_data):
 
 
 def _tag_commits(repo, release):
-    query = Commit.query(Commit.repo == repo.key, Commit.release == None)
+    query = Commit.query(Commit.repo == repo.key, Commit.release==None)
 
     with context.new() as ctx:
         # Associate past commits with the release.
@@ -231,7 +231,7 @@ def _tag_commits(repo, release):
                 ctx.add(target=tag_commit,
                         args=(release.key.id(), [key.id() for key in keys]))
 
-            if not more:
+            if not more or not commit_keys:
                 break
 
 
