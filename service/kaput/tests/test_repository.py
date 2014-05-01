@@ -181,7 +181,7 @@ class TestProcessCommit(unittest.TestCase):
                          mock_get_user.call_args_list)
 
         mock_commit_init.assert_called_once_with(
-            id=commit_id, repo=repo.key, sha=commit_id,
+            id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
             author=user.key, author_name=mock_author.name,
             author_email=mock_author.email, author_date=mock_author.date,
             committer=user.key, committer_name=mock_committer.name,
@@ -191,10 +191,10 @@ class TestProcessCommit(unittest.TestCase):
         )
 
         mock_commit_init.return_value.put.assert_called_once_with()
-        expected = [call(commit=commit.key,
+        expected = [call(parent=commit.key, commit=commit.key,
                          filename='file1.py', lines=[1, 2, 3, 4],
                          timestamp=mock_author.date),
-                    call(commit=commit.key,
+                    call(parent=commit.key, commit=commit.key,
                          filename='file2.py', lines=[14, 15, 16],
                          timestamp=mock_author.date)]
         self.assertEqual(expected, mock_commit_hunk_init.call_args_list)
@@ -258,8 +258,7 @@ class TestSyncRepos(unittest.TestCase):
         actual = repository.sync_repos(mock_user)
 
         self.assertEqual([repo1, mock_repo.return_value], actual)
-        expected = [call(User, mock_user.key.id(), repository.Repository,
-                         'github_%s' % repo.id)
+        expected = [call(repository.Repository, 'github_%s' % repo.id)
                     for repo in [repo1, repo2]]
         self.assertEqual(expected, mock_ndb.Key.call_args_list)
         mock_ndb.get_multi.assert_called_once_with(keys)

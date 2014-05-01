@@ -116,8 +116,8 @@ def sync_repos(user):
 
     logging.debug('Syncing Repositories for %s' % user)
     github_repos = user.github_repos
-    repo_keys = [ndb.Key(User, user.key.id(), Repository, 'github_%s' %
-                         repo.id) for repo in github_repos]
+    repo_keys = [ndb.Key(Repository, 'github_%s' % repo.id) for repo in
+                 github_repos]
     repos = ndb.get_multi(repo_keys)
 
     to_create = [github_repos[index]
@@ -269,11 +269,12 @@ def process_commit(repo_id, commit_id, owner_id):
     committer_user = User.get_by_id('github_%s' % gh_commit.committer.id)
 
     commit = Commit(
-        id=commit_id, repo=repo.key, sha=commit_id, author=author_user.key,
-        author_name=author.name, author_email=author.email,
-        author_date=author.date, committer=committer_user.key,
-        committer_name=committer.name, committer_email=committer.email,
-        committer_date=committer.date, message=gh_commit.commit.message)
+        id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
+        author=author_user.key, author_name=author.name,
+        author_email=author.email, author_date=author.date,
+        committer=committer_user.key, committer_name=committer.name,
+        committer_email=committer.email, committer_date=committer.date,
+        message=gh_commit.commit.message)
 
     logging.debug('Saving commit %s' % commit_id)
     commit.put()
@@ -318,7 +319,8 @@ def _parse_hunks(commit, commit_file):
 
         lines = range(int(start_line), int(start_line) + int(line_count))
 
-        hunks.append(CommitHunk(commit=commit.key,
+        hunks.append(CommitHunk(parent=commit.key,
+                                commit=commit.key,
                                 filename=commit_file.filename,
                                 lines=lines,
                                 timestamp=commit.author_date))
