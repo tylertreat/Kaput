@@ -1,4 +1,4 @@
 cron:
 - description: user account sync
   url: /_cron/sync
-  schedule: every 1 mins
+  schedule: every 4 hours
