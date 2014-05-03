@@ -44,7 +44,5 @@ require([
     'chosen',
 ], function(Router, Semantic, Chosen) {
     Router.initialize();
-    
-    $('.ui.dropdown').dropdown();
 });
 

@@ -57,6 +57,8 @@ define([
                 lastSynced: lastSynced,
             }));
 
+            $('.ui.dropdown').dropdown();
+
             // Select the last active repo. If there isn't one, select the
             // first in the list.
             var activeRepoId = this.sessionUser.get('active_repo');
