@@ -13,6 +13,7 @@ require.config({
         BaseView: 'views/BaseView',
         HomeView: 'views/HomeView',
         DashboardView: 'views/DashboardView',
+        AccountView: 'views/AccountView',
         Repository: 'models/Repository',
         User: 'models/User',
     },

@@ -11,8 +11,9 @@ define(function(require) {
         repos: require('text!templates/dashboard/repos.tpl'),
         repoListItem: require('text!templates/dashboard/repo_list_item.tpl'),
         repoDetails: require('text!templates/dashboard/repo_details.tpl'),
+        accountSettings: require('text!templates/dashboard/account_settings.tpl'),
     };
- 
+
     return {
         Home: {
             index: function() {
@@ -32,7 +33,10 @@ define(function(require) {
             repoDetails: function() {
                 return Handlebars.compile(_templates.Dashboard.repoDetails);
             },
-        }
+            accountSettings: function() {
+                return Handlebars.compile(_templates.Dashboard.accountSettings);
+            },
+        },
     }
 });
 

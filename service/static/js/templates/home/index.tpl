@@ -5,7 +5,7 @@
         </div>
         <div class="column">
             <a href="/login" class="ui button green pull-right">
-                <i class="icon user"></i> Login
+                <i class="icon user"></i> Sign in
             </a>
         </div>
     </div>

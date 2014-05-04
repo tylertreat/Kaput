@@ -4,12 +4,15 @@ define([
     'backbone',
     'HomeView',
     'DashboardView',
-], function($, _, Backbone, HomeView, DashboardView) {
+    'AccountView',
+    'User',
+], function($, _, Backbone, HomeView, DashboardView, AccountView, User) {
 
     var AppRouter = Backbone.Router.extend({
         routes: {
             '': 'index',
-            'dashboard': 'dashboard'
+            'dashboard': 'dashboard',
+            'account': 'account',
         },
 
         initialize: function() {
@@ -32,6 +35,16 @@ define([
             } else {
                 this.index();
             }
+        },
+
+        account: function() {
+            if (sessionData && sessionData.is_authenticated) {
+                this.showView('#container', new AccountView.AccountSettingsView({
+                    model: new User.UserModel(sessionData)
+                }));
+            } else {
+                this.index();
+            }           
         },
 
         showView: function(selector, view) {

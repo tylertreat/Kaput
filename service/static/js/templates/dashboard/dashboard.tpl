@@ -1,6 +1,6 @@
 <div>
     <div class="ui menu large">
-        <div class="item" style="font-weight:bold">Kaput.io</div>
+        <div class="item" style="font-weight:bold"><a href="/">Kaput.io</a></div>
         <select class="item repo-select" data-placeholder="Select a repo">
             {{#each repos}}
             <option value="{{ this.id }}">{{ this.name }}</option>
@@ -10,10 +10,12 @@
             <div class="ui dropdown item">
                 {{ user.username }} <i class="icon dropdown"></i>
                 <div class="menu">
-                    <a class="item" href="/logout"><i class="sign out icon">
-                        </i> Sign Out
+                    <a class="item" href="/logout">
+                        <i class="sign out icon"></i> Sign Out
                     </a>
-                    <a class="item"><i class="settings icon"></i> Account Settings</a>
+                    <a class="item" href="/#/account">
+                        <i class="settings icon"></i> Account Settings
+                    </a>
                 </div>
             </div>
         </div>
