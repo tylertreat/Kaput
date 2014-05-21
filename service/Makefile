@@ -8,7 +8,7 @@ JAVASCRIPT_DIR := ./static/js
 
 clean:
 		find . -name "*.py[co]" -delete
-			    rm -f .coverage
+	    rm -f .coverage
 
 distclean: clean
 		rm -rf $(BUILD_DIR)
@@ -26,8 +26,8 @@ py_dev_deps: $(BUILD_DIR)/pip-dev.log
 
 $(BUILD_DIR)/pip-deploy.log: requirements.txt
 		@mkdir -p .build
-			$(PIP) install -Ur requirements.txt | tee $(BUILD_DIR)/pip-deploy.log
-				$(PYTHON) $(TOOLS_DIR)/link_libs.py
+		$(PIP) install -Ur requirements.txt | tee $(BUILD_DIR)/pip-deploy.log
+		$(PYTHON) $(TOOLS_DIR)/link_libs.py
 
 $(BUILD_DIR)/pip-dev.log: requirements_dev.txt
 		@mkdir -p .build
@@ -42,4 +42,6 @@ integrations:
 test: clean integrations
 
 js:
-		node $(JAVASCRIPT_DIR)/lib/r.js -o $(JAVASCRIPT_DIR)/buildconfig.js
+		bower install
+		# TODO: Get jsx-requirejs plugin working.
+		#node $(JAVASCRIPT_DIR)/lib/r.js/dist/r.js -o $(JAVASCRIPT_DIR)/buildconfig.js

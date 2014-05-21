@@ -53,7 +53,7 @@ ul.list li {
 /* Masthead */
 
 
-#banner {
+.banner {
     background-image: url('/static/images/banner.jpg');
     background-position: top;
     background-size: cover;
