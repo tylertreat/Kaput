@@ -36,7 +36,7 @@ define([
                         </Chosen>
                         </div>
                         <div className="right menu">
-                            <div className="ui dropdown item">
+                            <div ref="dropdownMenu" className="ui dropdown item">
                                 {this.props.user.username} 
                                 <i className="icon dropdown"></i>
                                 <div className="menu">
@@ -52,6 +52,10 @@ define([
                     </div>
                 </div>
             );
+        },
+
+        componentDidMount: function() {
+            $(this.refs.dropdownMenu.getDOMNode()).dropdown();
         },
 
         changeActiveRepo: function(e) {
