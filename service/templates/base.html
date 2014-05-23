@@ -10,11 +10,11 @@
     <link href="/static/css/semantic.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
     <link href="/static/css/font-awesome.min.css" rel="stylesheet">
-    <link href="/static/css/chosen.css" rel="stylesheet">
+    <link href="/static/js/lib/chosen/chosen.css" rel="stylesheet">
     <link href="/static/css/pace.css" rel="stylesheet">
 
     <script>var sessionData = {{ user|safe }};</script>
-    <script data-main="/static/js/main-built" src="/static/js/lib/require.js"></script>
+    <script data-main="/static/js/main" src="/static/js/lib/requirejs/require.js"></script>
 
     {% block style_block %}{# page-specific CSS #}{% endblock %}
     {% block head_script %}{# defer-incapable JS block #}{% endblock %}

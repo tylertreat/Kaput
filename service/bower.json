@@ -1,0 +1,15 @@
+{
+    "name": "kaput",
+    "dependencies": {
+        "requirejs": ">=2.1.11",
+        "r.js": ">=2.1.11",
+        "react": "0.9.0",
+        "require-jsx": null,
+        "jQuery": ">=1.9.0",
+        "Semantic-UI": ">=0.17.0",
+        "backbone": "1.1.2",
+        "moment": "2.6.0",
+        "chosen": "https://github.com/harvesthq/chosen/releases/download/v1.1.0/chosen_v1.1.0.zip",
+        "pace": "0.4.16"
+    }
+}
