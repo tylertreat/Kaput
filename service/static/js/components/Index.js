@@ -26,11 +26,11 @@ define([
                       <div className="ui page two column grid">
                         <div className="column">
                             <h1 className="ui header">
-                                <span className="green">$#@% happens.</span> 
+                                <span className="green">$#@% happens. </span> 
                                 Know when, where, and why.
                             </h1>
                             <h2 className="ui header">
-                                <span className="green">Intelligent issue awareness</span> 
+                                <span className="green">Intelligent issue awareness </span> 
                                 lets your teams respond to problems as they arise, in real-time.
                             </h2>
                             <a href="/login" className="ui large green icon button">
