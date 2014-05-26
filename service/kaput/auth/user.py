@@ -82,13 +82,7 @@ class User(ndb.Model, UserMixin, SerializableMixin):
     @property
     def repos(self):
         from kaput.repository import Repository
-
-        repos = memcache.get('kaput:repos:%s' % self.key.id())
-        if not repos:
-            repos = Repository.query(Repository.owner == self.key).fetch()
-            memcache.set('kaput:repos:%s' % self.key.id(), repos)
-
-        return repos
+        return Repository.query(Repository.owner == self.key).fetch()
 
     def get_github_repo(self, name):
         return self.github_user.get_repo(name)
