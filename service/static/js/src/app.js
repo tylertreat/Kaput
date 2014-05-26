@@ -5,9 +5,9 @@ define([
     'semantic',
     'react',
     'backbone',
-    'jsx!components/Index',
-    'jsx!components/Dashboard',
-    'jsx!components/Account',
+    'components/Index',
+    'components/Dashboard',
+    'components/Account',
     'models/User',
 ], function($, Semantic, React, Backbone, Index, Dashboard, Account, User) {
 

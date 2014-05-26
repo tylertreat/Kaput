@@ -9,7 +9,7 @@ define([
     'pace',
     'models/Repository',
     'models/User',
-    'jsx!components/Navigation',
+    'components/Navigation',
 ], function($, Semantic, React, Backbone, Moment, Pace, Repository, User, Navigation) {
 
     var Dashboard = React.createClass({
@@ -94,7 +94,7 @@ define([
                     <div className="title">
                         <div className="pull-left" style={{marginRight: 15, marginTop: 10}}>
                             <div className={btnClasses} onClick={this._toggle}>
-                                {this.props.repo.selected ? 'Enabled' : 'Enable'}
+                                {this.props.repo.enabled ? 'Enabled' : 'Enable'}
                             </div>
                         </div>
                         <h2 className="ui header">

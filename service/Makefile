@@ -43,5 +43,5 @@ test: clean integrations
 
 js:
 		bower install
-		# TODO: Get jsx-requirejs plugin working.
-		#node $(JAVASCRIPT_DIR)/lib/r.js/dist/r.js -o $(JAVASCRIPT_DIR)/buildconfig.js
+		jsx $(JAVASCRIPT_DIR)/src $(JAVASCRIPT_DIR)/build
+		node $(JAVASCRIPT_DIR)/lib/r.js/dist/r.js -o $(JAVASCRIPT_DIR)/build/buildconfig.js

@@ -1,3 +1,5 @@
+/** @jsx React.DOM */
+
 define([
     'jquery',
     'underscore',
@@ -5,7 +7,7 @@ define([
     'react',
     'models/Repository',
     'models/User',
-    'jsx!components/Navigation',
+    'components/Navigation',
 ], function($, _, Backbone, React, Repository, User, Navigation) {
     'use strict';
 

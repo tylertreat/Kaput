@@ -15,7 +15,7 @@ define([
                 <div>
                     <div className="ui menu large">
                         <div className="item" style={{fontWeight: 'bold'}}>
-                            Kaput.io
+                            <a href="/">Kaput.io</a>
                         </div>
                         <div className="item">
                         <Chosen

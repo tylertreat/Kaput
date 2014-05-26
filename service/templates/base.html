@@ -14,7 +14,7 @@
     <link href="/static/css/pace.css" rel="stylesheet">
 
     <script>var sessionData = {{ user|safe }};</script>
-    <script data-main="/static/js/main" src="/static/js/lib/requirejs/require.js"></script>
+    <script data-main="/static/js/build/main-built" src="/static/js/lib/requirejs/require.js"></script>
 
     {% block style_block %}{# page-specific CSS #}{% endblock %}
     {% block head_script %}{# defer-incapable JS block #}{% endblock %}
