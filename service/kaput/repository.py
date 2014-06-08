@@ -267,12 +267,14 @@ def process_commit(repo_id, commit_id, owner_id):
 
     author_user = User.get_by_id('github_%s' % gh_commit.author.id)
     committer_user = User.get_by_id('github_%s' % gh_commit.committer.id)
+    author_key = author_user.key if author_user else None
+    committer_key = committer_user.key if committer_user else None
 
     commit = Commit(
         id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
-        author=author_user.key, author_name=author.name,
+        author=author_key, author_name=author.name,
         author_email=author.email, author_date=author.date,
-        committer=committer_user.key, committer_name=committer.name,
+        committer=committer_key, committer_name=committer.name,
         committer_email=committer.email, committer_date=committer.date,
         message=gh_commit.commit.message)
 

@@ -1,0 +1,16 @@
+queue:
+- name: default
+  rate: 100/s
+  bucket_size: 100
+
+- name: commit-aggregation
+  rate: 500/s
+  bucket_size: 100
+
+- name: notification-processor
+  rate: 500/s
+  bucket_size: 100
+
+- name: user-sync
+  rate: 500/s
+  bucket_size: 100
