@@ -92,7 +92,6 @@ class CommitHunk(ndb.Model):
 class Release(ndb.Model):
     """Git repository release."""
 
-    repo = ndb.KeyProperty(kind=Repository)
     tag_name = ndb.StringProperty(indexed=False)
     name = ndb.StringProperty(indexed=False)
     description = ndb.TextProperty(indexed=False)

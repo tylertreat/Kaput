@@ -202,7 +202,7 @@ class TestProcessGithubRelease(DatastoreMemcacheTestCase):
                           enabled=True)
         repo.put()
 
-        old_release = Release(id='github_123', parent=repo.key, repo=repo.key,
+        old_release = Release(id='github_123', parent=repo.key,
                               tag_name='v0.0.1', name='release', url='url',
                               description='description', prerelease=False,
                               created=datetime.utcnow(),
