@@ -67,7 +67,6 @@ class Repository(ndb.Model, SerializableMixin):
 class Commit(ndb.Model):
     """Commit to a Git repository."""
 
-    repo = ndb.KeyProperty(kind=Repository)
     sha = ndb.StringProperty(indexed=False)
     author = ndb.KeyProperty(kind=User, required=False)
     author_name = ndb.StringProperty(indexed=False)
@@ -180,7 +179,8 @@ def process_repo_push(repo, owner, push_data):
 
 
 def process_release(repo_id, release_data):
-    """Process a newly created repo release.
+    """Process a newly created repo release. Create a Release entity for it and
+    tag any untagged Commits with the Release.
 
     Args:
         repo_id: the id of the repo the release belongs to.
@@ -217,10 +217,18 @@ def process_release(repo_id, release_data):
 
 
 def _tag_commits(repo, release):
-    query = Commit.query(Commit.repo == repo.key, Commit.release==None)
+    """Tag any untagged Commits with the given Release.
+
+    Args:
+        repo: the Repository to tag Commits for.
+        release: the Release to tag with.
+    """
+
+    query = Commit.query(ancestor=repo.key).filter(Commit.release == None)
 
     with context.new() as ctx:
-        # Associate past commits with the release.
+        # Associate past commits with the release. Fan out tasks to process
+        # in batches.
         cursor = None
         while True:
             commit_keys, cursor, more = query.fetch_page(
@@ -229,16 +237,28 @@ def _tag_commits(repo, release):
             for keys in chunk(commit_keys, 10):
                 logging.debug('Inserting task to tag commit release')
                 ctx.add(target=tag_commit,
-                        args=(release.key.id(), [key.id() for key in keys]))
+                        args=(repo.key.id(), release.key.id(),
+                              [key.id() for key in keys]))
 
             if not more or not commit_keys:
                 break
 
 
-def tag_commit(release_id, commit_ids):
-    release = Release.get_by_id(release_id)
+def tag_commit(repo_id, release_id, commit_ids):
+    """Tag the given Commits with a Release.
+
+    Args:
+        repo_id: the id of the Repository.
+        release_id: the id of the Release to tag with.
+        commit_ids: the ids of the Commits to tag.
+    """
+
+    repo = Repository.get_by_id(repo_id)
+    release = Release.get_by_id(release_id, parent=repo.key)
     commits = filter(None, ndb.get_multi(
-        [ndb.Key(Commit, commit_id) for commit_id in commit_ids]))
+        [ndb.Key(Repository, repo_id, Commit, commit_id)
+         for commit_id in commit_ids])
+    )
 
     for commit in commits:
         commit.release = release.key
@@ -271,7 +291,7 @@ def process_commit(repo_id, commit_id, owner_id):
     committer_key = committer_user.key if committer_user else None
 
     commit = Commit(
-        id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
+        id=commit_id, parent=repo.key, sha=commit_id,
         author=author_key, author_name=author.name,
         author_email=author.email, author_date=author.date,
         committer=committer_key, committer_name=committer.name,

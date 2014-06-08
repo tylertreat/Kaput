@@ -181,10 +181,10 @@ class TestProcessCommit(unittest.TestCase):
                          mock_get_user.call_args_list)
 
         mock_commit_init.assert_called_once_with(
-            id=commit_id, parent=repo.key, repo=repo.key, sha=commit_id,
-            author=user.key, author_name=mock_author.name,
-            author_email=mock_author.email, author_date=mock_author.date,
-            committer=user.key, committer_name=mock_committer.name,
+            id=commit_id, parent=repo.key, sha=commit_id, author=user.key,
+            author_name=mock_author.name, author_email=mock_author.email,
+            author_date=mock_author.date, committer=user.key,
+            committer_name=mock_committer.name,
             committer_email=mock_committer.email,
             committer_date=mock_committer.date,
             message=mock_commit_prop.message
@@ -449,6 +449,7 @@ class TestTagCommits(unittest.TestCase):
         key2 = Mock()
         query.fetch_page.return_value = ([key1, key2], None, False)
         mock_commit.query.return_value = query
+        query.filter.return_value = query
         context = Mock()
         mock_context.new.return_value.__enter__.return_value = context
 
@@ -457,30 +458,32 @@ class TestTagCommits(unittest.TestCase):
 
         repository._tag_commits(repo, release)
 
-        mock_commit.query.assert_called_once_with(
-            repository.Commit.repo == repo.key,
-            repository.Commit.release == None)
+        mock_commit.query.assert_called_once_with(ancestor=repo.key)
+        query.filter.assert_called_once_with(repository.Commit.release == None)
         mock_context.new.assert_called_once_with()
         query.fetch_page.assert_called_once_with(500, start_cursor=None,
                                                  keys_only=True)
         context.add.assert_called_once_with(
             target=repository.tag_commit,
-            args=(release.key.id(), [key1.id(), key2.id()])
+            args=(repo.key.id(), release.key.id(), [key1.id(), key2.id()])
         )
 
 
 @patch('kaput.repository.ndb.Key')
 @patch('kaput.repository.ndb.put_multi')
 @patch('kaput.repository.ndb.get_multi')
+@patch('kaput.repository.Repository.get_by_id')
 @patch('kaput.repository.Release.get_by_id')
 class TestTagCommit(unittest.TestCase):
 
-    def test_tag_commit(self, mock_get_by_id, mock_get_multi, mock_put_multi,
-                        mock_key):
+    def test_tag_commit(self, mock_get_release, mock_get_repo, mock_get_multi,
+                        mock_put_multi, mock_key):
         """Ensure that the Commits are updated with the Release."""
 
         mock_release = Mock()
-        mock_get_by_id.return_value = mock_release
+        mock_repo = Mock()
+        mock_get_release.return_value = mock_release
+        mock_get_repo.return_value = mock_repo
         key1 = Mock()
         key2 = Mock()
         key3 = Mock()
@@ -489,14 +492,17 @@ class TestTagCommit(unittest.TestCase):
         commit2 = Mock()
         mock_get_multi.return_value = [commit1, commit2, None]
 
+        repo_id = 'abc'
         release_id = '123'
         commit_ids = ['foo', 'bar', 'baz']
 
-        repository.tag_commit(release_id, commit_ids)
+        repository.tag_commit(repo_id, release_id, commit_ids)
 
-        mock_get_by_id.assert_called_once_with(release_id)
-        expected = [call(repository.Commit, commit_id)
-                    for commit_id in commit_ids]
+        mock_get_repo.assert_called_once_with(repo_id)
+        mock_get_release.assert_called_once_with(release_id,
+                                                 parent=mock_repo.key)
+        expected = [call(repository.Repository, repo_id, repository.Commit,
+                         commit_id) for commit_id in commit_ids]
         self.assertEqual(expected, mock_key.call_args_list)
         mock_get_multi.assert_called_once_with([key1, key2, key3])
         mock_put_multi.assert_called_once_with([commit1, commit2])
