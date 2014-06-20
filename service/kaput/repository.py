@@ -7,6 +7,7 @@ from google.appengine.ext import ndb
 
 from furious import context
 from furious.async import defaults
+from furious.errors import Abort
 from github import Github
 
 from kaput import settings
@@ -277,8 +278,13 @@ def process_commit(repo_id, commit_id, owner_id):
         owner_id: id of the owner of the repo.
     """
 
-    owner = User.get_by_id(owner_id)
     repo = Repository.get_by_id(repo_id)
+
+    commit = Commit.get_by_id(commit_id, parent=repo.key)
+    if commit:
+        raise Abort('Commit %s already exists' % commit_id)
+
+    owner = User.get_by_id(owner_id)
     gh_commit = _get_commit(repo.name, commit_id, owner.github_token)
     author = gh_commit.commit.author
     committer = gh_commit.commit.committer

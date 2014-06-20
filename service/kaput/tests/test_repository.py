@@ -102,22 +102,47 @@ class TestProcessRepoPush(unittest.TestCase):
         self.assertEqual(expected, context.add.call_args_list)
 
 
-@patch('kaput.repository.ndb.put_multi')
-@patch('kaput.repository.CommitHunk')
 @patch('kaput.repository.Commit')
-@patch('kaput.repository._get_commit')
 @patch('kaput.repository.Repository.get_by_id')
-@patch('kaput.repository.User.get_by_id')
 class TestProcessCommit(unittest.TestCase):
 
-    def test_process(self, mock_get_user, mock_get_repo, mock_get_commit,
-                     mock_commit_init, mock_commit_hunk_init, mock_put_multi):
+    def test_idempotent(self, mock_get_repo, mock_commit):
+        """Ensure process_commit aborts if a Commit already exists for the sha.
+        """
+        from furious.errors import Abort
+
+        repo = repository.Repository(id=123, name='foo')
+        mock_get_repo.return_value = repo
+
+        owner_token = 'token'
+        user = User(id=123)
+        user.github_token = owner_token
+
+        repo_id = '123'
+        commit_id = 'abc'
+
+        self.assertRaises(Abort, repository.process_commit, repo_id, commit_id,
+                          user.key.id())
+
+        mock_get_repo.assert_called_once_with(repo_id)
+        mock_commit.get_by_id.assert_called_once_with(commit_id,
+                                                      parent=repo.key)
+        self.assertFalse(mock_commit.called)
+
+    @patch('kaput.repository.ndb.put_multi')
+    @patch('kaput.repository.CommitHunk')
+    @patch('kaput.repository._get_commit')
+    @patch('kaput.repository.User.get_by_id')
+    def test_process(self, mock_get_user, mock_get_commit,
+                     mock_commit_hunk_init, mock_put_multi, mock_get_repo,
+                     mock_commit_init):
         """Ensure process_commit saves a Commit and CommitHunks to the
         datastore.
         """
 
         repo = repository.Repository(id=123, name='foo')
         mock_get_repo.return_value = repo
+        mock_commit_init.get_by_id.return_value = None
 
         mock_author = Mock()
         mock_author.id = 900
@@ -172,6 +197,8 @@ class TestProcessCommit(unittest.TestCase):
         repository.process_commit(repo_id, commit_id, user.key.id())
 
         mock_get_repo.assert_called_once_with(repo_id)
+        mock_commit_init.get_by_id.assert_called_once_with(commit_id,
+                                                           parent=repo.key)
         mock_get_commit.assert_called_once_with(repo.name, commit_id,
                                                 owner_token)
 
