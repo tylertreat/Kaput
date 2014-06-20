@@ -245,7 +245,6 @@ class TestProcessGithubPush(DatastoreMemcacheTestCase):
 
         commit = Commit.get_by_id(self.commit.sha, parent=repo.key)
         self.assertEqual(repo.key, commit.key.parent())
-        self.assertEqual(self.commit.sha, commit.sha)
         self.assertIsNone(commit.author)
         self.assertEqual('Tyler Treat', commit.author_name)
         self.assertEqual('ttreat31@gmail.com', commit.author_email)

@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 
@@ -209,7 +208,7 @@ class TestProcessGithubRelease(DatastoreMemcacheTestCase):
                               published=datetime.utcnow())
         old_release.put()
 
-        tagged_commit = Commit(id='abc', parent=repo.key, sha='abc',
+        tagged_commit = Commit(id='abc', parent=repo.key,
                                author_name='Tyler Treat',
                                author_email='ttreat31@gmail.com',
                                author_date=datetime.utcnow(),
@@ -219,7 +218,7 @@ class TestProcessGithubRelease(DatastoreMemcacheTestCase):
                                release=old_release.key)
         tagged_commit.put()
 
-        untagged_commit = Commit(id='def', parent=repo.key, sha='def',
+        untagged_commit = Commit(id='def', parent=repo.key,
                                  author_name='Tyler Treat',
                                  author_email='ttreat31@gmail.com',
                                  author_date=datetime.utcnow(),

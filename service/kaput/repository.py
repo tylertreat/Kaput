@@ -67,7 +67,6 @@ class Repository(ndb.Model, SerializableMixin):
 class Commit(ndb.Model):
     """Commit to a Git repository."""
 
-    sha = ndb.StringProperty(indexed=False)
     author = ndb.KeyProperty(kind=User, required=False)
     author_name = ndb.StringProperty(indexed=False)
     author_email = ndb.StringProperty(indexed=False)
@@ -290,12 +289,11 @@ def process_commit(repo_id, commit_id, owner_id):
     committer_key = committer_user.key if committer_user else None
 
     commit = Commit(
-        id=commit_id, parent=repo.key, sha=commit_id,
-        author=author_key, author_name=author.name,
-        author_email=author.email, author_date=author.date,
-        committer=committer_key, committer_name=committer.name,
-        committer_email=committer.email, committer_date=committer.date,
-        message=gh_commit.commit.message)
+        id=commit_id, parent=repo.key, author=author_key,
+        author_name=author.name, author_email=author.email,
+        author_date=author.date, committer=committer_key,
+        committer_name=committer.name, committer_email=committer.email,
+        committer_date=committer.date, message=gh_commit.commit.message)
 
     logging.debug('Saving commit %s' % commit_id)
     commit.put()

@@ -181,7 +181,7 @@ class TestProcessCommit(unittest.TestCase):
                          mock_get_user.call_args_list)
 
         mock_commit_init.assert_called_once_with(
-            id=commit_id, parent=repo.key, sha=commit_id, author=user.key,
+            id=commit_id, parent=repo.key, author=user.key,
             author_name=mock_author.name, author_email=mock_author.email,
             author_date=mock_author.date, committer=user.key,
             committer_name=mock_committer.name,
