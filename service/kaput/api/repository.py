@@ -3,6 +3,7 @@ import json
 from flask import request
 from flask.ext.login import current_user
 from flask.ext.login import login_required
+from furious.async import Async
 
 from kaput.api.blueprint import blueprint
 from kaput.repository import enable_repo
@@ -65,7 +66,6 @@ def update_repo():
 def backfill_repo(repo_id):
     from kaput.backfill import backfill_repo
 
-    repo = Repository.get_by_id(repo_id)
-    backfill_repo(repo)
-    return json.dumps(repo.to_dict()), 200
+    Async(target=backfill_repo, args=(repo_id,)).start()
+    return json.dumps({'message': 'Backfilling repo'}), 200
 
