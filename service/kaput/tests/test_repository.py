@@ -173,6 +173,7 @@ class TestProcessCommit(unittest.TestCase):
         mock_author_user = Mock()
         mock_author_user.id = '123'
         mock_commit.author = mock_author
+        mock_commit.sha = 'abc'
         mock_committer_user = Mock()
         mock_committer_user.id = '123'
         mock_commit.committer = mock_committer

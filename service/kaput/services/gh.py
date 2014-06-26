@@ -125,3 +125,20 @@ def get_repos(user, repo_type='owner'):
 
     return repos
 
+
+def get_commits(repo):
+    """Retrieve commits for the given repo.
+
+    Args:
+        repo: the Repository to get commits for.
+
+    Returns:
+        list of Github Commit instances.
+    """
+
+    repo_id = repo.key.id().split('_')[1]
+    github = Github(repo.owner.get().github_token)
+    gh_repo = github.get_repo(int(repo_id))
+
+    return gh_repo.get_commits()
+

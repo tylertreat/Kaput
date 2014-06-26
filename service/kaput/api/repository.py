@@ -59,3 +59,13 @@ def update_repo():
 
     return json.dumps(repo.to_dict()), 200
 
+
+@login_required
+@blueprint.route('/v1/repo/<repo_id>/backfill')
+def backfill_repo(repo_id):
+    from kaput.backfill import backfill_repo
+
+    repo = Repository.get_by_id(repo_id)
+    backfill_repo(repo)
+    return json.dumps(repo.to_dict()), 200
+

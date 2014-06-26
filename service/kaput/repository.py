@@ -286,6 +286,14 @@ def process_commit(repo_id, commit_id, owner_id):
 
     owner = User.get_by_id(owner_id)
     gh_commit = _get_commit(repo.name, commit_id, owner.github_token)
+    populate_commit(gh_commit, repo)
+
+
+def populate_commit(gh_commit, repo):
+    """Process a commit that was made to a repo by creating Commit and
+    CommitHunk entities for it.
+    """
+
     author = gh_commit.commit.author
     committer = gh_commit.commit.committer
 
@@ -295,13 +303,13 @@ def process_commit(repo_id, commit_id, owner_id):
     committer_key = committer_user.key if committer_user else None
 
     commit = Commit(
-        id=commit_id, parent=repo.key, author=author_key,
+        id=gh_commit.sha, parent=repo.key, author=author_key,
         author_name=author.name, author_email=author.email,
         author_date=author.date, committer=committer_key,
         committer_name=committer.name, committer_email=committer.email,
         committer_date=committer.date, message=gh_commit.commit.message)
 
-    logging.debug('Saving commit %s' % commit_id)
+    logging.debug('Saving commit %s' % gh_commit.sha)
     commit.put()
 
     hunks = []
@@ -310,6 +318,7 @@ def process_commit(repo_id, commit_id, owner_id):
         hunks.extend(_parse_hunks(commit, commit_file))
 
     logging.debug('Saving %d commit hunks' % len(hunks))
+    # TODO: handle putting lots of commit hunks.
     ndb.put_multi(hunks)
 
 
@@ -331,8 +340,10 @@ def _parse_hunks(commit, commit_file):
     """
 
     patch = commit_file.patch
-
     hunks = []
+
+    if not patch:
+        return hunks
 
     for patch in re.findall('@@(.*)@@', patch, re.IGNORECASE):
         _, after = patch.strip().split(' ')

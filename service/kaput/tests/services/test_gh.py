@@ -113,3 +113,25 @@ class TestDeleteWebHook(unittest.TestCase):
         self.assertFalse(gh.delete_webhook(repo, url))
         mock_get_hooks.assert_called_once_with(repo, (url,))
 
+
+@patch('kaput.services.gh.Github')
+class TestGetCommits(unittest.TestCase):
+
+    def test_get_commits(self, mock_github):
+        """Ensure that the correct Github api call is made."""
+
+        github = Mock()
+        mock_github.return_value = github
+        repo = Mock()
+        repo.key.id.return_value = 'github_123'
+        token = 'abc'
+        repo.owner.get.return_value.github_token = token
+
+        actual = gh.get_commits(repo)
+
+        self.assertEqual(github.get_repo.return_value.get_commits.return_value,
+                         actual)
+        mock_github.assert_called_once_with(token)
+        github.get_repo.assert_called_once_with(123)
+        github.get_repo.return_value.get_commits.assert_called_once_with()
+
